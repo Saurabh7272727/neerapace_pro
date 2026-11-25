@@ -57,6 +57,66 @@ export function HomePage() {
           ))}
         </div>
       </section>
+
+      <section className="border-y border-line bg-paper/75">
+        <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8 lg:py-20">
+          <div className="max-w-2xl">
+            <p className="text-xs uppercase tracking-[0.2em] text-fairway">More than a net session</p>
+            <h2 className="mt-3 font-serif text-4xl text-pitch md:text-5xl">Build your game, one session at a time.</h2>
+            <p className="mt-4 leading-7 text-ink/70">Cricket is a craft: technique, decisions, movement and the confidence to trust your preparation. Training at Neera Pace is designed to help players work on the whole game, at every stage of their journey.</p>
+          </div>
+          <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["01", "Batting & bowling", "Work on the fundamentals and repeat the skills that make you more consistent at the crease and in your bowling spell."],
+              ["02", "Fielding & movement", "Practice sharper hands, balanced footwork and the athletic habits that make a difference between the wickets."],
+              ["03", "Game awareness", "Learn to read the situation, make a plan and understand how each delivery can change an innings."],
+              ["04", "Team habits", "Build communication, discipline and respect for teammates, opponents and the game."],
+            ].map(([number, title, body]) => (
+              <article key={number} className="rounded-3xl border border-line bg-white p-5">
+                <span className="font-serif text-3xl text-gold">{number}</span>
+                <h3 className="mt-4 font-serif text-2xl text-pitch">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-ink/70">{body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-[.8fr_1.2fr] lg:px-8 lg:py-20">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-fairway">Your first innings</p>
+          <h2 className="mt-3 font-serif text-4xl text-pitch md:text-5xl">Joining the academy is straightforward.</h2>
+          <p className="mt-4 leading-7 text-ink/70">Tell us a little about the player and the program that feels right. The office reviews each verified application and follows up about next steps.</p>
+          <Link to="/register" className="mt-6 inline-flex rounded-full bg-pitch px-6 py-3 text-sm font-semibold text-cream transition hover:bg-pitch-dark">Start your application</Link>
+        </div>
+        <ol className="grid gap-3 sm:grid-cols-3">
+          {[
+            ["Choose a pathway", "Explore the programs and select the best fit for the player."],
+            ["Send the details", "Complete the registration form to receive an application ID."],
+            ["Verify & hear back", "Confirm the email address; the academy office will review the application."],
+          ].map(([title, body], index) => (
+            <li key={title} className="rounded-3xl border border-line bg-paper p-5">
+              <span className="grid h-9 w-9 place-items-center rounded-full bg-gold/25 font-semibold text-pitch">{index + 1}</span>
+              <h3 className="mt-5 font-serif text-2xl text-pitch">{title}</h3>
+              <p className="mt-2 text-sm leading-6 text-ink/70">{body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="hero-grid px-5 py-14 text-cream sm:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-gold">Ready when you are</p>
+            <h2 className="mt-2 font-serif text-3xl md:text-4xl">Make the next practice count.</h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-cream/70">Have a question before applying? Get in touch with the academy team.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/register" className="rounded-full bg-gold px-5 py-3 text-sm font-semibold text-pitch">Apply for admission</Link>
+            <Link to="/contact" className="rounded-full border border-cream/25 px-5 py-3 text-sm font-medium text-cream hover:border-gold/60">Contact the academy</Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

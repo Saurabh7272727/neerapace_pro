@@ -1,0 +1,111 @@
+NEERA PACE - DOMAIN AND DNS SETUP
+=================================
+
+No domain name or VPS public IP was provided. Replace every <PLACEHOLDER>
+below with the real value from your domain registrar, VPS provider, or email
+provider. Do not put secret keys or passwords in DNS records.
+
+1. POINT THE DOMAIN TO THE VPS
+------------------------------
+
+Find the VPS public IPv4 address in your hosting control panel. Create these
+records at the DNS provider for the domain:
+
+Type    Name    Value                         TTL
+A       @       <VPS_PUBLIC_IPV4>             Default/300
+CNAME   www     <YOUR_DOMAIN>.                Default/300
+
+Example only: for cricket.example.com, the A record name is @ and the www
+target is cricket.example.com. (Use your actual domain, not this example.)
+
+Only add an AAAA record if the VPS has a working public IPv6 address and its
+firewall allows ports 80 and 443 over IPv6. Otherwise, leave AAAA unset.
+The DNS records point to the VPS, not to a Docker container or its private
+Docker-network address.
+
+2. VALUES TO SET ON THE VPS
+---------------------------
+
+In the server-side .env file, set:
+
+CLIENT_ORIGIN=https://<YOUR_DOMAIN>
+COOKIE_SECURE=true
+
+CLIENT_ORIGIN must be the exact browser origin, with https:// and no path or
+trailing slash. Keep the other .env secrets private and set them according to
+DEPLOYMENT.md. The website and API use the same domain; Nginx routes / to the
+web container and /api/ and /socket.io/ to the API container.
+
+3. ENABLE HTTPS
+---------------
+
+From the repository directory on the VPS, after DNS resolves to that server
+and ports 80 and 443 are reachable, run:
+
+./scripts/enable-https.sh <YOUR_DOMAIN> <CERTIFICATE_CONTACT_EMAIL>
+
+The script obtains a Let's Encrypt certificate and writes Nginx configuration
+to nginx/conf.d/default.conf and nginx/conf.d/ssl.conf from
+nginx/ssl.conf.template. Those generated files are server-specific; use the
+same domain passed to the script. Keep the certificate contact email
+accessible for expiry notices.
+
+Important: the current script requests a certificate and configures Nginx
+for one hostname only. A www CNAME does not redirect a browser and does not
+make www HTTPS work automatically. Either use one canonical hostname (for
+example, the apex domain) or extend the certificate command and both Nginx
+server_name directives to include both the apex and www hostnames before
+serving both.
+
+4. EMAIL SENDER DNS
+-------------------
+
+For registration verification and password-reset emails, publish the records
+provided by your SMTP/email service:
+
+- SPF: TXT record at the host specified by the provider. If an SPF record
+  already exists, merge the provider's include into that record; do not add
+  multiple SPF TXT records for the same host.
+- DKIM: publish the exact TXT or CNAME record(s), selector/name, and target
+  supplied by the provider.
+- DMARC: TXT record at _dmarc.<YOUR_DOMAIN>. Ask the provider for its
+  recommended policy. A monitoring policy (p=none) is a cautious starting
+  point; use an aggregate-report mailbox that you control.
+- MX: only needed if this domain should receive mail. Use the provider's
+  exact MX records.
+
+These values cannot be guessed from this repository. Copy them from the
+service configured by SMTP_HOST/SMTP_USER or the email provider's domain
+verification page.
+
+5. OTHER DOMAIN-RELATED SETTINGS
+-------------------------------
+
+- DEPLOYMENT.md: replace its example domain and email in deployment commands.
+- scripts/enable-https.sh: pass the actual hostname and contact email; it
+  currently supports one hostname per invocation.
+- nginx/ssl.conf.template: the __DOMAIN__ placeholder is substituted by the
+  HTTPS script. Edit only if you are changing Nginx hostnames or routing.
+- GitHub Actions repository secrets: set VPS_HOST to the VPS public IP or
+  SSH hostname, VPS_USER to the SSH account, and VPS_SSH_KEY to that
+  account's private deploy key. These are deployment secrets, not DNS
+  records.
+
+There is no separate VITE public-domain setting in this deployment: the
+browser calls the API through the same-origin /api path.
+
+6. CHECK AFTER DNS PROPAGATES
+-----------------------------
+
+On the VPS:
+
+docker compose -f docker-compose.prod.yml config --quiet
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml ps
+
+Then verify:
+
+https://<YOUR_DOMAIN>/api/health
+
+The VPS firewall should allow inbound 80 and 443. Do not publish MongoDB or
+Redis ports to the public internet in the production Compose configuration.

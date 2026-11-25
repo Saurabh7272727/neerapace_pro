@@ -30,14 +30,7 @@ export function GlobalLoading() {
 
     return (
         <div className="global-loading" role="status" aria-live="polite" aria-label="Loading">
-            <div className="global-loading-card">
-                <span className="global-loading-mark">NP</span>
-                <div className="global-loading-copy">
-                    <strong>Neera Pace</strong>
-                    <span>Preparing the academy</span>
-                </div>
-            </div>
-            <span className="global-loading-track"><span /></span>
+            <span />
         </div>
     );
 }
