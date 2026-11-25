@@ -1,0 +1,79 @@
+services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: dev
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:27017/neerapace
+      REDIS_URL: redis://redis:6379
+      CLIENT_ORIGIN: http://localhost:5173
+      COOKIE_SECURE: "false"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret-change}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change}
+      OTP_PEPPER: ${OTP_PEPPER:-dev-otp-pepper-change}
+      CHOKIDAR_USEPOLLING: "1"
+    volumes:
+      - .:/app
+      - api_modules:/app/node_modules
+    ports:
+      - "4000:4000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: dev
+    environment:
+      VITE_API_PROXY: http://api:4000
+      CHOKIDAR_USEPOLLING: "1"
+    volumes:
+      - .:/app
+      - web_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+  inngest:
+    image: inngest/inngest:latest
+    command: ["dev", "-u", "http://api:4000/api/inngest"]
+    ports:
+      - "8288:8288"
+    depends_on:
+      - api
+
+volumes:
+  mongo_data:
+  api_modules:
+  web_modules:

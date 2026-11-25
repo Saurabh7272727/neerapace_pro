@@ -1,0 +1,56 @@
+You are acting as a Senior Software Architect and Technical Lead.
+
+I want to build a production-ready Cricket Academy Management Platform based on the provided SRS Version 2.0.
+
+IMPORTANT PROJECT REQUIREMENTS:
+
+1. Read and understand the complete SRS before planning.
+2. Do not start implementation immediately.
+3. First analyze the requirements and propose a complete system architecture.
+4. Use React.js, Tailwind CSS, Redux Toolkit, Redux Persist and TanStack React Query.
+5. Use Node.js, Express.js, MongoDB and Mongoose.
+6. Use JWT authentication with secure HttpOnly cookies.
+7. Use email OTP authentication nodemailer & mailgen and Inngest for asynchronous email jobs.
+8. Use Socket.IO for real-time chat.
+9. Use Redis for caching, temporary OTP data, rate limiting and real-time coordination.
+10. Use Cloudinary for image storage and CDN delivery.
+11. Use Zod for strict frontend and backend validation.
+12. Use appropriate sanitization and security practices.
+13. Use Docker and Docker Compose for local development and production deployment.
+14. Production hosting target is Hostinger VPS KVM 2 running Ubuntu Linux.
+15. Use Nginx as the production reverse proxy.
+16. No payment gateway, Razorpay or online payment functionality.
+
+DEVELOPMENT RULES:
+
+- Follow modular, maintainable and scalable architecture.
+- Use separation of concerns.
+- Keep controllers, services, routes, models and middleware separate.
+- Never duplicate business logic.
+- Implement proper error handling and logging.
+- Use environment variables for all secrets.
+- Never hardcode API keys or credentials.
+- Create reusable frontend components.
+- Implement role-based authorization on the backend.
+- Write meaningful tests.
+- Do not use insecure shortcuts.
+- Do not generate unnecessary dependencies.
+
+FIRST TASK:
+
+Analyze the SRS and produce:
+
+1. System architecture.
+2. Frontend and backend folder structure.
+3. Database collection design.
+4. API module breakdown.
+5. Authentication flow.
+6. Real-time chat architecture.
+7. Inngest background job architecture.
+8. Redis caching strategy.
+9. Docker deployment architecture.
+10. Development roadmap divided into implementation phases.
+
+Identify potential technical risks and dependencies.
+
+Do not write application code until I approve the architecture and implementation plan.

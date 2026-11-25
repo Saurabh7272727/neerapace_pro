@@ -1,0 +1,17 @@
+name: Deploy
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update the VPS checkout
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          HOST: ${{ secrets.VPS_HOST }}
+          USER: ${{ secrets.VPS_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id
+          chmod 600 ~/.ssh/id
+          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/id "$USER@$HOST" 'cd /opt/neerapace && git pull --ff-only && docker compose -f docker-compose.prod.yml up -d --build'

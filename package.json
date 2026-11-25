@@ -1,0 +1,26 @@
+{
+  "name": "neerapace",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Cricket academy management platform",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c green,blue \"npm run dev -w @neerapace/api\" \"npm run dev -w @neerapace/web\"",
+    "dev:api": "npm run dev -w @neerapace/api",
+    "dev:web": "npm run dev -w @neerapace/web",
+    "test": "npm run test -w @neerapace/api && npm run test -w @neerapace/web",
+    "lint": "node scripts/check-syntax.mjs",
+    "seed": "npm run seed -w @neerapace/api",
+    "build:web": "npm run build -w @neerapace/web",
+    "start": "npm run start -w @neerapace/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
