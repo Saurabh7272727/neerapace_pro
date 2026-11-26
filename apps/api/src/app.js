@@ -28,7 +28,7 @@ export function createApp() {
     });
     next();
   });
-  app.use(express.json({ limit: "5mb" }))
+  app.use(express.json({ type: "*/*", limit: "5mb" }));
   app.use("/api/inngest", express.json({ limit: "4mb" }), serve({ client: inngest, functions }));
 
   const httpApi = express.Router();
