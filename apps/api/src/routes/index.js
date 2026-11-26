@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import sanitizeHtml from "sanitize-html";
 import {
   admissionDecisionSchema,
   announcementSchema,
@@ -22,6 +23,7 @@ import {
   userStatusSchema,
 } from "@neerapace/shared";
 import { getCloudinary } from "../config/cloudinary.js";
+import { sendAdminEmail } from "../config/mail.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { sensitiveLimiter } from "../middleware/rateLimit.js";
 import { validateBody, validateQuery } from "../middleware/validate.js";
@@ -38,10 +40,12 @@ import * as users from "../modules/users/user.service.js";
 import authRoutes from "../modules/auth/auth.routes.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/index.js";
 
 const router = Router();
 const enquiryLimit = sensitiveLimiter("enquiry", 8, 60 * 60 * 1000);
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const uploadLimit = sensitiveLimiter("upload", 60, 60 * 60 * 1000);
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const admin = [requireAuth, requireRole("admin")];
 
 function sniffImage(buffer) {
@@ -238,6 +242,34 @@ router.get("/chat/conversations/:id/messages", requireAuth, asyncHandler(async (
 router.post("/chat/conversations/:id/messages", requireAuth, validateBody(messageSchema), asyncHandler(async (req, res) => {
   res.status(201).json({ data: await chat.sendMessage({ user: req.user, conversationId: req.params.id, ...req.body }) });
 }));
+router.post("/chat/email", ...admin, asyncHandler(async (req, res) => {
+  const { studentId, subject, html, attachments = [] } = req.body || {};
+  if (typeof subject !== "string" || !subject.trim() || subject.length > 180 || typeof html !== "string" || !html.trim() || html.length > 100_000 || !Array.isArray(attachments) || attachments.length > 3) {
+    throw new ApiError(400, "EMAIL", "Add a subject and message. Up to three documents are allowed.");
+  }
+  const student = await User.findOne({ _id: studentId, role: "student", deletedAt: null, status: "active" }).select("email name");
+  if (!student) throw new ApiError(404, "STUDENT", "The active student could not be found");
+  const allowed = new Map([["application/pdf", "pdf"], ["application/msword", "doc"], ["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx"]]);
+  const files = attachments.map((file) => {
+    const ext = allowed.get(file?.contentType);
+    if (!ext || typeof file.filename !== "string" || typeof file.content !== "string" || file.content.length > 260_000 || !file.filename.toLowerCase().endsWith(`.${ext}`)) {
+      throw new ApiError(400, "ATTACHMENT", "Attach PDF, DOC or DOCX documents under 180 KB each.");
+    }
+    const content = Buffer.from(file.content, "base64");
+    const validFile = file.contentType === "application/pdf"
+      ? content.subarray(0, 5).toString("ascii") === "%PDF-"
+      : file.contentType === "application/msword"
+        ? content.subarray(0, 4).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0]))
+        : content.subarray(0, 2).toString("hex") === "504b";
+    if (!content.length || content.length > 180 * 1024 || !validFile) throw new ApiError(400, "ATTACHMENT", "The selected document is invalid or exceeds 180 KB.");
+    return { filename: file.filename.replace(/[^a-zA-Z0-9._-]/g, "_"), content, contentType: file.contentType };
+  });
+  const safeBody = sanitizeHtml(html, { allowedTags: ["p", "br", "strong", "b", "em", "i", "u", "ul", "ol", "li", "h2", "h3", "blockquote", "a"], allowedAttributes: { a: ["href"] }, allowedSchemes: ["https", "mailto"] });
+  const wrapped = `<div style="font-family:Arial,sans-serif;color:#17251f;max-width:640px;margin:auto;line-height:1.65"><div style="padding:18px 22px;background:#12372a;color:#fff;font-weight:700">Neera Pace Cricket Academy</div><div style="padding:24px">${safeBody}</div><hr style="border:0;border-top:1px solid #e5e7eb"><p style="padding:0 24px;color:#66736d;font-size:12px">Academy communication · Neera Pace</p></div>`;
+  const result = await sendAdminEmail({ to: student.email, subject: subject.trim(), html: wrapped, text: safeBody.replace(/<\/(p|li|h2|h3)>/gi, "\n").replace(/<[^>]*>/g, " ").trim(), attachments: files });
+  if (result.skipped) throw new ApiError(503, "EMAIL_UNAVAILABLE", "Email is not configured. Add SMTP settings to the server environment.");
+  res.json({ data: { sent: true } });
+}));
 router.post("/chat/conversations/:id/read", requireAuth, asyncHandler(async (req, res) => {
   res.json({ data: await chat.markRead(req.user.id, req.params.id) });
 }));
@@ -246,7 +278,7 @@ router.get("/stats/admin", ...admin, asyncHandler(async (_req, res) => {
   res.json({ data: await stats.adminStats() });
 }));
 
-router.post("/uploads", requireAuth, (req, res, next) => {
+router.post("/uploads", requireAuth, uploadLimit, (req, res, next) => {
   upload.single("file")(req, res, (error) => (error ? next(error) : next()));
 }, asyncHandler(async (req, res) => {
   const folder = String(req.body?.folder || "");
@@ -255,11 +287,11 @@ router.post("/uploads", requireAuth, (req, res, next) => {
     throw new ApiError(403, "FORBIDDEN", "You cannot upload to that folder");
   }
   if (folder === "chat" && req.user.status !== "active") throw new ApiError(403, "ACCOUNT_INACTIVE", "Chat uploads require an active account");
-  if (!req.file || !sniffImage(req.file.buffer)) throw new ApiError(400, "UPLOAD", "Upload a JPEG, PNG, WEBP, or GIF image under 5 MB");
+  if (!req.file || !sniffImage(req.file.buffer)) throw new ApiError(400, "UPLOAD", "Upload a JPEG, PNG, WEBP, or GIF image under 10 MB");
   const client = getCloudinary();
   if (!client) throw new ApiError(503, "UPLOADS_UNAVAILABLE", "Image storage is not configured");
   const uploaded = await new Promise((resolve, reject) => {
-    const stream = client.uploader.upload_stream({ folder: `neerapace/${folder}`, resource_type: "image" }, (error, result) => (error ? reject(error) : resolve(result)));
+    const stream = client.uploader.upload_stream({ folder: `neerapace/${folder}`, resource_type: "image", format: "webp" }, (error, result) => (error ? reject(error) : resolve(result)));
     stream.end(req.file.buffer);
   });
   res.status(201).json({ data: { url: uploaded.secure_url, publicId: uploaded.public_id } });

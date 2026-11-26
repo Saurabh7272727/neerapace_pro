@@ -71,3 +71,11 @@ export async function sendTemplatedEmail({ to, subject, intro, action, outro }) 
   if (usingEthereal) logger.info("Email preview", nodemailer.getTestMessageUrl(info));
   return { skipped: false, messageId: info.messageId };
 }
+
+export async function sendAdminEmail({ to, subject, html, text, attachments = [] }) {
+  const transport = await getTransport();
+  if (!transport) return { skipped: true };
+  const info = await transport.sendMail({ from: env.SMTP_FROM, to, subject, html, text, attachments });
+  if (usingEthereal) logger.info("Email preview", nodemailer.getTestMessageUrl(info));
+  return { skipped: false, messageId: info.messageId };
+}

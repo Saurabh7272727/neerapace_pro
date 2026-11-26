@@ -11,6 +11,10 @@ export function errorHandler(err, _req, res, _next) {
     return;
   }
   if (err?.name === "MulterError") {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      res.status(413).json({ error: { code: "UPLOAD_TOO_LARGE", message: "Images must be 10 MB or smaller" } });
+      return;
+    }
     res.status(400).json({ error: { code: "UPLOAD", message: "The file could not be accepted" } });
     return;
   }

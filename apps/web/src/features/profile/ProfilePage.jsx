@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Button, ErrorNote, Field, PageTitle, inputClass } from "../../components/ui.jsx";
+import { ImagePicker } from "../../components/ImagePicker.jsx";
 import { useSession } from "../../hooks/useSession.js";
 import { api, imageUrl } from "../../lib/api.js";
 
@@ -9,7 +10,10 @@ export function ProfilePage() {
   const queryClient = useQueryClient();
   const user = session.data;
   const [error, setError] = useState(null);
+  const [avatarError, setAvatarError] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   if (!user) return null;
 
   async function save(event) {
@@ -28,15 +32,20 @@ export function ProfilePage() {
     }
   }
 
-  async function uploadAvatar(event) {
-    const file = event.target.files?.[0];
+  async function uploadAvatar(file) {
     if (!file) return;
+    setAvatarFile(file);
+    setAvatarUploading(true);
+    setAvatarError(null);
     try {
       const uploaded = await api.upload("avatars", file);
       await api.patch("/auth/me", { avatarUrl: uploaded.url, avatarPublicId: uploaded.publicId });
       await queryClient.invalidateQueries({ queryKey: ["me"] });
+      setAvatarFile(null);
     } catch (err) {
-      setError(err);
+      setAvatarError(err);
+    } finally {
+      setAvatarUploading(false);
     }
   }
 
@@ -44,10 +53,11 @@ export function ProfilePage() {
     <section className="max-w-xl">
       <PageTitle title="Profile" />
       <h1 className="font-serif text-4xl text-pitch">Profile</h1>
-      {user.avatarUrl ? <img src={imageUrl(user.avatarUrl, 160)} alt="" className="mt-4 h-16 w-16 rounded-full object-cover" /> : null}
-      <label className="mt-3 block text-sm">Profile photo
-        <input className="mt-1 block" type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadAvatar} />
-      </label>
+      <div className="mt-4 max-w-lg">
+        <ImagePicker label={avatarUploading ? "Uploading..." : "Choose profile photo"} file={avatarFile} onFileChange={uploadAvatar} currentUrl={user.avatarUrl ? imageUrl(user.avatarUrl, 160) : ""} disabled={avatarUploading} />
+      </div>
+      {avatarUploading ? <p className="mt-2 text-sm text-ink/60" role="status">Uploading and converting your photo...</p> : null}
+      <ErrorNote error={avatarError} />
       <form className="mt-6 grid gap-3" onSubmit={save}>
         <Field label="Name"><input className={inputClass} name="name" defaultValue={user.name} /></Field>
         <Field label="Phone"><input className={inputClass} name="phone" defaultValue={user.phone} /></Field>

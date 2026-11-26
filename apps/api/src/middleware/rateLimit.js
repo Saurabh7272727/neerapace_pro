@@ -32,7 +32,7 @@ export function sensitiveLimiter(name, limit, windowMs) {
     standardHeaders: "draft-7",
     legacyHeaders: false,
     store: new RedisRateStore(windowMs),
-    keyGenerator: (req) => `${name}:${req.user?.id || ipKeyGenerator(req)}`,
+    keyGenerator: (req) => `${name}:${req.user?.id || ipKeyGenerator(req.ip)}`,
     handler: (_req, _res, next) => next(new ApiError(429, "RATE_LIMIT", "Too many requests. Try again shortly")),
     validate: { trustProxy: false, xForwardedForHeader: false },
   });

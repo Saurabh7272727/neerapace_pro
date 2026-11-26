@@ -1,4 +1,5 @@
-import { Route, Routes } from "react-router-dom";
+import { useLayoutEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout.jsx";
 import { PublicLayout } from "./components/layout/PublicLayout.jsx";
 import { RequireAuth } from "./components/layout/RequireAuth.jsx";
@@ -16,6 +17,7 @@ import { GlobalLoading } from "./components/GlobalLoading.jsx";
 export function App() {
   return (
     <>
+      <ScrollToTop />
       <GlobalLoading />
       <Routes>
         <Route element={<PublicLayout />}>
@@ -62,6 +64,16 @@ export function App() {
       </Routes>
     </>
   );
+}
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
 }
 
 function MissingPage() {

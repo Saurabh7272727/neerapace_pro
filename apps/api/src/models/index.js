@@ -14,3 +14,4 @@ export { Conversation } from "./Conversation.js";
 export { ConversationParticipant } from "./ConversationParticipant.js";
 export { Message } from "./Message.js";
 export { AuditLog } from "./AuditLog.js";
+export { JobOutbox } from "./JobOutbox.js";

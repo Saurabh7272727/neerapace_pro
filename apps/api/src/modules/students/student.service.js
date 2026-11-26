@@ -10,6 +10,7 @@ import { pageQuery } from "../../utils/http.js";
 import { presentStudent } from "../../utils/presenters.js";
 import { sanitizePlain } from "../../utils/sanitize.js";
 import { syncBatchConversation } from "../chat/chat.service.js";
+import { disconnectUserSockets } from "../../sockets/io.js";
 
 const studentPopulate = [
   { path: "userId", select: "name email phone status avatar" },
@@ -49,7 +50,9 @@ export async function decideAdmission(actor, userId, { decision, note }) {
   profile.reviewedBy = actor.id;
   await profile.save();
   profile.userId.status = decision === "approved" ? "active" : "rejected";
+  if (decision === "rejected") profile.userId.authVersion = (profile.userId.authVersion || 0) + 1;
   await profile.userId.save();
+  if (decision === "rejected") disconnectUserSockets(profile.userId.id);
   await cacheDel(cacheKeys.stats);
   await recordAudit(actor.id, "admission.decide", String(userId), { decision });
   await publish("admission/decided", {
@@ -71,11 +74,19 @@ export async function listStudentsFor(actor, query) {
     filter = { userId: actor.id };
   }
   if (actor.role === "admin" && query.status) filter.admissionStatus = query.status;
-  const profiles = await StudentProfile.find(filter).populate(studentPopulate).sort({ createdAt: -1 });
-  const filtered = q
-    ? profiles.filter((profile) => `${profile.registrationId} ${profile.userId?.name || ""}`.toLowerCase().includes(q.toLowerCase()))
-    : profiles;
-  return { items: filtered.slice(skip, skip + limit).map(presentStudent), meta: { page, limit, total: filtered.length } };
+  if (q) {
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matchingUsers = await User.find({ role: "student", deletedAt: null, name: { $regex: escaped, $options: "i" } }).select("_id").lean();
+    filter.$or = [
+      { registrationId: { $regex: escaped, $options: "i" } },
+      { userId: { $in: matchingUsers.map((user) => user._id) } },
+    ];
+  }
+  const [profiles, total] = await Promise.all([
+    StudentProfile.find(filter).populate(studentPopulate).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    StudentProfile.countDocuments(filter),
+  ]);
+  return { items: profiles.map(presentStudent), meta: { page, limit, total } };
 }
 
 export async function getOwnStudent(userId) {
@@ -143,7 +154,9 @@ export async function removeStudent(actor, userId) {
   const previousBatch = profile?.batchId;
   user.deletedAt = new Date();
   user.status = "suspended";
+  user.authVersion = (user.authVersion || 0) + 1;
   await user.save();
+  disconnectUserSockets(user.id);
   if (profile?.batchId) {
     profile.batchId = null;
     await profile.save();

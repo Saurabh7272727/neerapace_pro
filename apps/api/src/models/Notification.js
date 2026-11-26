@@ -9,6 +9,7 @@ const notificationSchema = new mongoose.Schema(
     link: { type: String, default: "" },
     refId: { type: String, default: "" },
     emailSent: { type: Boolean, default: false },
+    emailClaimedAt: { type: Date, default: null },
     readAt: { type: Date, default: null },
   },
   { timestamps: true },

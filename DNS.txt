@@ -36,6 +36,12 @@ trailing slash. Keep the other .env secrets private and set them according to
 DEPLOYMENT.md. The website and API use the same domain; Nginx routes / to the
 web container and /api/ and /socket.io/ to the API container.
 
+For local development served over plain http://localhost, use
+COOKIE_SECURE=false. For production, keep COOKIE_SECURE=true and open the
+site using its https:// domain. Secure cookies are rejected by browsers on
+ordinary HTTP origins, which can make a successful login request look like
+it immediately signs out.
+
 3. ENABLE HTTPS
 ---------------
 

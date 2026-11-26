@@ -6,6 +6,7 @@ import { recordAudit } from "../../utils/audit.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { presentCoach } from "../../utils/presenters.js";
 import { sanitizePlain } from "../../utils/sanitize.js";
+import { disconnectUserSockets } from "../../sockets/io.js";
 
 const populate = { path: "userId", select: "name email phone status avatar deletedAt" };
 
@@ -68,7 +69,9 @@ export async function removeCoach(actor, userId) {
   if (!user) throw new ApiError(404, "NOT_FOUND", "Coach not found");
   user.deletedAt = new Date();
   user.status = "suspended";
+  user.authVersion = (user.authVersion || 0) + 1;
   await user.save();
+  disconnectUserSockets(user.id);
   await cacheDel(cacheKeys.coaches);
   await recordAudit(actor.id, "coach.delete", String(userId), {});
   return { ok: true };

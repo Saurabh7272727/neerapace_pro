@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import crypto from "node:crypto";
 import { formatRegistrationId, LOGIN_STATUSES } from "@neerapace/shared";
 import { env } from "../../config/env.js";
-import { cacheGet, cacheSet } from "../../config/redis.js";
+import { cacheGetDel, cacheSet } from "../../config/redis.js";
 import { publish } from "../../jobs/publish.js";
 import { CoachProfile, Counter, Program, StudentProfile, User } from "../../models/index.js";
 import { ApiError } from "../../utils/ApiError.js";
@@ -12,6 +12,7 @@ import { presentCoach, presentStudent, publicUser } from "../../utils/presenters
 import { signAccess, signRefresh, verifyRefresh } from "../../utils/tokens.js";
 import { logger } from "../../config/logger.js";
 import { sanitizePlain } from "../../utils/sanitize.js";
+import { disconnectUserSockets } from "../../sockets/io.js";
 
 const ROUNDS = 12;
 
@@ -23,8 +24,8 @@ async function nextRegistrationId() {
 
 async function createSession(user) {
   const tokenId = crypto.randomBytes(16).toString("hex");
-  const access = signAccess({ sub: String(user.id), role: user.role });
-  const refresh = signRefresh({ sub: String(user.id), jti: tokenId });
+  const access = signAccess({ sub: String(user.id), role: user.role, ver: user.authVersion ?? 0 });
+  const refresh = signRefresh({ sub: String(user.id), jti: tokenId, ver: user.authVersion ?? 0 });
   await cacheSet(`refresh:${tokenId}`, "live", env.REFRESH_TTL_SECONDS);
   return { access, refresh, csrf: newCsrfToken(), user: publicUser(user) };
 }
@@ -132,12 +133,17 @@ export async function refreshSession(token) {
   } catch {
     throw new ApiError(401, "AUTH_REQUIRED", "Sign in again");
   }
+  let user = await User.findOne({ _id: payload.sub, deletedAt: null });
+  if (!user || !LOGIN_STATUSES.includes(user.status) || (payload.ver ?? 0) !== (user.authVersion ?? 0)) {
+    throw new ApiError(401, "AUTH_REQUIRED", "Sign in again");
+  }
   const key = `refresh:${payload.jti}`;
-  const state = await cacheGet(key);
+  const state = await cacheGetDel(key);
   if (state !== "live") throw new ApiError(401, "AUTH_REQUIRED", "Sign in again");
-  await cacheSet(key, "used", 24 * 3600);
-  const user = await User.findOne({ _id: payload.sub, deletedAt: null });
-  if (!user || !LOGIN_STATUSES.includes(user.status)) throw new ApiError(401, "AUTH_REQUIRED", "Sign in again");
+  user = await User.findOne({ _id: payload.sub, deletedAt: null });
+  if (!user || !LOGIN_STATUSES.includes(user.status) || (payload.ver ?? 0) !== (user.authVersion ?? 0)) {
+    throw new ApiError(401, "AUTH_REQUIRED", "Sign in again");
+  }
   return createSession(user);
 }
 
@@ -168,7 +174,9 @@ export async function resetPassword({ email, otp, password }) {
   const user = await User.findOne({ email, deletedAt: null }).select("+passwordHash");
   if (!user?.emailVerifiedAt) throw new ApiError(400, "OTP_INVALID", "That code is invalid or has expired");
   user.passwordHash = await bcrypt.hash(password, ROUNDS);
+  user.authVersion = (user.authVersion || 0) + 1;
   await user.save();
+  disconnectUserSockets(user.id);
   return { ok: true };
 }
 
@@ -215,8 +223,8 @@ export async function updateProfile(user, input) {
   return getSession(user.id);
 }
 
-export async function googleSignIn(credential) {
-  if (env.GOOGLE_SSO_ENABLED !== "true" || !env.GOOGLE_CLIENT_ID) {
+export async function googleSignIn(credential, expectedNonce) {
+  if (env.GOOGLE_SSO_ENABLED !== "true" || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
     throw new ApiError(503, "SSO_UNAVAILABLE", "Google sign-in is not configured");
   }
   if (typeof credential !== "string" || credential.length > 8192) {
@@ -226,7 +234,7 @@ export async function googleSignIn(credential) {
   let ticket;
   try {
     const { OAuth2Client } = await import("google-auth-library");
-    const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+    const client = new OAuth2Client(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET, googleRedirectUri());
     ticket = await client.verifyIdToken({
       idToken: credential,
       audience: env.GOOGLE_CLIENT_ID,
@@ -238,6 +246,9 @@ export async function googleSignIn(credential) {
   const payload = ticket.getPayload();
   if (!payload?.email_verified || !payload.email) {
     throw new ApiError(401, "SSO_EMAIL_UNVERIFIED", "A verified Google email is required");
+  }
+  if (expectedNonce && payload.nonce !== expectedNonce) {
+    throw new ApiError(401, "SSO_INVALID", "Google could not verify this sign-in request");
   }
 
   const email = payload.email.trim().toLowerCase();
@@ -263,4 +274,40 @@ export async function googleSignIn(credential) {
   user.lastLoginAt = new Date();
   await user.save();
   return createSession(user);
+}
+
+export function googleRedirectUri() {
+  return new URL("/api/auth/google/callback", env.CLIENT_ORIGIN).toString();
+}
+
+export async function googleAuthorizationUrl(state, nonce) {
+  if (env.GOOGLE_SSO_ENABLED !== "true" || !env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
+    throw new ApiError(503, "SSO_UNAVAILABLE", "Google sign-in is not configured");
+  }
+  const { OAuth2Client } = await import("google-auth-library");
+  const client = new OAuth2Client(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET, googleRedirectUri());
+  return client.generateAuthUrl({
+    access_type: "online",
+    prompt: "select_account",
+    response_type: "code",
+    scope: ["openid", "email", "profile"],
+    state,
+    nonce,
+  });
+}
+
+export async function googleSignInWithCode(code, expectedNonce) {
+  if (typeof code !== "string" || code.length > 8192) {
+    throw new ApiError(400, "SSO_INVALID", "Google returned an invalid authorization code");
+  }
+  try {
+    const { OAuth2Client } = await import("google-auth-library");
+    const client = new OAuth2Client(env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET, googleRedirectUri());
+    const { tokens } = await client.getToken(code);
+    if (!tokens.id_token) throw new Error("Google did not return an ID token");
+    return googleSignIn(tokens.id_token, expectedNonce);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(401, "SSO_INVALID", "Google could not complete this sign-in");
+  }
 }

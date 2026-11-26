@@ -12,7 +12,9 @@ Cricket academy website and office tools: public pages, student registration, ad
 
 The API is http://localhost:4000. Vite proxies `/api` and `/socket.io`.
 
-Without `SMTP_HOST`, development email uses an Ethereal inbox and the API log prints a preview URL. The one-time code itself is not written to the log. Without `INNGEST_EVENT_KEY`, development runs the same email jobs in the API process. Production requires Inngest.
+Without `SMTP_HOST`, development email uses an Ethereal inbox and the API log prints a preview URL. The one-time code itself is not written to the log. Without `INNGEST_EVENT_KEY`, development runs the same email jobs in the API process. Production requires `INNGEST_EVENT_KEY`, `INNGEST_SIGNING_KEY`, `ADMIN_EMAIL`, and `SMTP_HOST`; the API will fail to start if one is missing. Inngest events are first persisted to a MongoDB outbox and retried until accepted, and exhausted job failures are emailed to `ADMIN_EMAIL`.
+
+Google sign-in uses the OAuth authorization-code redirect flow. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_SSO_ENABLED=true` in `.env`. The redirect URI is derived from `CLIENT_ORIGIN` as `/api/auth/google/callback`; for local development, register `http://localhost:5173/api/auth/google/callback` in Google Cloud Console.
 
 ## Scripts
 

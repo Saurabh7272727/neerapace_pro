@@ -1,4 +1,5 @@
 import { beginRequest, endRequest } from "../components/GlobalLoading.jsx";
+import { imageFileError } from "./imageUpload.js";
 
 export class ApiClientError extends Error {
   constructor(status, code, message, details) {
@@ -66,6 +67,8 @@ export const api = {
   put: async (path, payload) => (await request(path, { method: "PUT", body: JSON.stringify(payload) })).data,
   del: async (path) => (await request(path, { method: "DELETE" })).data,
   async upload(folder, file) {
+    const validationError = imageFileError(file);
+    if (validationError) throw new ApiClientError(400, "UPLOAD", validationError);
     const body = new FormData();
     body.append("folder", folder);
     body.append("file", file);

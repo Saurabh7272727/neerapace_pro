@@ -103,8 +103,8 @@ export async function listMessages(userId, conversationId, before) {
   if (!(await isParticipant(conversationId, userId))) throw new ApiError(403, "FORBIDDEN", "You are not in this conversation");
   const filter = { conversationId };
   if (before) filter._id = { $lt: before };
-  const rows = await Message.find(filter).sort({ _id: -1 }).limit(30).populate("senderId", "name");
-  return rows.reverse().map(presentMessage);
+  const rows = await Message.find(filter).sort({ _id: -1 }).limit(10).populate("senderId", "name");
+  return { items: rows.reverse().map(presentMessage), hasMore: rows.length === 10 };
 }
 
 export async function sendMessage({ user, conversationId, body, imageUrl, imagePublicId }) {
@@ -166,6 +166,7 @@ export async function syncBatchConversation(batchId) {
     ? []
     : [...new Set([...batch.coachIds.map(String), ...students.map((student) => String(student.userId)), ...admins.map((admin) => String(admin._id))])];
   let conversation = await Conversation.findOne({ type: "batch", batchId: batch.id });
+  const previousParticipantIds = conversation ? conversation.participantIds.map(String) : [];
   if (!conversation) {
     conversation = await Conversation.create({ type: "batch", batchId: batch.id, participantIds, title: batch.name });
   } else {
@@ -175,6 +176,7 @@ export async function syncBatchConversation(batchId) {
   }
   if (!participantIds.length) {
     await ConversationParticipant.deleteMany({ conversationId: conversation.id });
+    for (const removedId of previousParticipantIds) getIo()?.in(`user:${removedId}`).socketsLeave(`conversation:${conversation.id}`);
     return conversation;
   }
   await ConversationParticipant.deleteMany({ conversationId: conversation.id, userId: { $nin: participantIds } });
@@ -184,6 +186,10 @@ export async function syncBatchConversation(batchId) {
       { $setOnInsert: { unreadCount: 0 } },
       { upsert: true },
     );
+  }
+  const currentIds = new Set(participantIds.map(String));
+  for (const removedId of previousParticipantIds.filter((id) => !currentIds.has(id))) {
+    getIo()?.in(`user:${removedId}`).socketsLeave(`conversation:${conversation.id}`);
   }
   return conversation;
 }

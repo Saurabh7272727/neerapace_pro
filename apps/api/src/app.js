@@ -18,18 +18,18 @@ export function createApp() {
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
   app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-  app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
+  app.use(cors({ origin: [env.CLIENT_ORIGIN, process.env.CLIENT_ORIGIN2], credentials: true }));
   app.use(cookieParser());
   app.use((req, res, next) => {
     const started = Date.now();
     res.on("finish", () => {
       if (req.path === "/api/health") return;
-      logger.info(req.method, req.originalUrl, String(res.statusCode), `${Date.now() - started}ms`);
+      logger.info(req.method, req.path, String(res.statusCode), `${Date.now() - started}ms`);
     });
     next();
   });
-
-  app.use("/api/inngest", serve({ client: inngest, functions }));
+  app.use(express.json({ limit: "5mb" }))
+  app.use("/api/inngest", express.json({ limit: "4mb" }), serve({ client: inngest, functions }));
 
   const httpApi = express.Router();
   httpApi.use(express.json({ limit: "1mb" }));

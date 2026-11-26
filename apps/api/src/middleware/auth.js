@@ -15,7 +15,7 @@ export async function requireAuth(req, _res, next) {
       throw new ApiError(401, "AUTH_REQUIRED", "Sign in required");
     }
     const user = await User.findOne({ _id: payload.sub, deletedAt: null }).select("-passwordHash");
-    if (!user || !LOGIN_STATUSES.includes(user.status)) {
+    if (!user || !LOGIN_STATUSES.includes(user.status) || (payload.ver ?? 0) !== (user.authVersion ?? 0)) {
       throw new ApiError(401, "AUTH_REQUIRED", "Sign in required");
     }
     req.user = user;

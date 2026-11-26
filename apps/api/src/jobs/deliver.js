@@ -1,23 +1,35 @@
 import { env } from "../config/env.js";
 import { logger } from "../config/logger.js";
 import { sendTemplatedEmail } from "../config/mail.js";
+import { getJson } from "../config/redis.js";
 import { getIo } from "../sockets/io.js";
+import { otpMatches } from "../utils/otp.js";
+import { openOtpPayload } from "../utils/otpSecrets.js";
 import { Announcement, Batch, Notification, StudentProfile, User, ConversationParticipant, Message } from "../models/index.js";
 
 async function rememberNotification({ userId, type, title, body, link, refId, email }) {
   const existing = refId ? await Notification.findOne({ userId, type, refId }) : null;
-  const doc =
-    existing ||
-    (await Notification.create({
-      userId,
-      type,
-      title,
-      body,
-      link: link || "",
-      refId: refId || "",
-      emailSent: false,
-    }));
-  if (!existing) {
+  let doc = existing;
+  let created = false;
+  if (!doc) {
+    try {
+      doc = await Notification.create({
+        userId,
+        type,
+        title,
+        body,
+        link: link || "",
+        refId: refId || "",
+        emailSent: false,
+      });
+      created = true;
+    } catch (error) {
+      if (error?.code !== 11000 || !refId) throw error;
+      doc = await Notification.findOne({ userId, type, refId });
+      if (!doc) throw error;
+    }
+  }
+  if (created) {
     getIo()?.to(`user:${userId}`).emit("notification:new", {
       id: String(doc.id),
       type,
@@ -28,21 +40,47 @@ async function rememberNotification({ userId, type, title, body, link, refId, em
     });
   }
   if (email && !doc.emailSent) {
-    await sendTemplatedEmail({
-      to: email,
-      subject: title,
-      intro: body,
-      action: link
-        ? { instructions: "You can open the academy site for the full update.", text: "Open Neera Pace", link: `${env.CLIENT_ORIGIN}${link}` }
-        : undefined,
-    });
-    doc.emailSent = true;
-    await doc.save();
+    const claimed = await Notification.findOneAndUpdate(
+      {
+        _id: doc._id,
+        emailSent: false,
+        $or: [
+          { emailClaimedAt: null },
+          { emailClaimedAt: { $exists: false } },
+          { emailClaimedAt: { $lt: new Date(Date.now() - 2 * 60_000) } },
+        ],
+      },
+      { $set: { emailClaimedAt: new Date() } },
+      { new: true },
+    );
+    if (claimed) {
+      try {
+        const result = await sendTemplatedEmail({
+          to: email,
+          subject: title,
+          intro: body,
+          action: link
+            ? { instructions: "You can open the academy site for the full update.", text: "Open Neera Pace", link: `${env.CLIENT_ORIGIN}${link}` }
+            : undefined,
+        });
+        if (result.skipped) throw new Error("SMTP is not configured; notification email was not sent");
+        await Notification.updateOne({ _id: doc._id }, { $set: { emailSent: true, emailClaimedAt: null } });
+      } catch (error) {
+        await Notification.updateOne({ _id: doc._id }, { $set: { emailClaimedAt: null } });
+        throw error;
+      }
+    }
   }
   return doc;
 }
 
 async function deliverOtp(data, subject) {
+  data = openOtpPayload(data);
+  const current = await getJson(`otp:${data.purpose}:${data.email}`);
+  if (!current || !otpMatches(data.otp, current.hash)) {
+    logger.warn("Expired or replaced OTP email was skipped", { purpose: data.purpose });
+    return;
+  }
   await sendTemplatedEmail({
     to: { email: data.email, name: data.name },
     subject,

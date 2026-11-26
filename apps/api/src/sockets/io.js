@@ -7,3 +7,7 @@ export function setIo(instance) {
 export function getIo() {
   return io;
 }
+
+export function disconnectUserSockets(userId) {
+  io?.in(`user:${userId}`).disconnectSockets(true);
+}

@@ -18,8 +18,8 @@ export function initSocket(server) {
       const token = readCookie(socket.handshake.headers.cookie || "", "np_access");
       if (!token) return next(new Error("unauthorized"));
       const payload = verifyAccess(token);
-      const user = await User.findOne({ _id: payload.sub, deletedAt: null }).select("role status name");
-      if (!user || !["active", "pending_approval", "rejected"].includes(user.status)) return next(new Error("unauthorized"));
+      const user = await User.findOne({ _id: payload.sub, deletedAt: null }).select("role status name authVersion");
+      if (!user || !["active", "pending_approval", "rejected"].includes(user.status) || (payload.ver ?? 0) !== (user.authVersion ?? 0)) return next(new Error("unauthorized"));
       socket.user = user;
       return next();
     } catch {
@@ -37,10 +37,14 @@ export function initSocket(server) {
     }, 25_000);
 
     socket.on("conversation:join", async (conversationId, ack) => {
-      const allowed = await isParticipant(conversationId, socket.user.id);
-      if (!allowed) return ack?.({ ok: false });
-      socket.join(`conversation:${conversationId}`);
-      return ack?.({ ok: true });
+      try {
+        const allowed = await isParticipant(conversationId, socket.user.id);
+        if (!allowed) return ack?.({ ok: false });
+        socket.join(`conversation:${conversationId}`);
+        return ack?.({ ok: true });
+      } catch {
+        return ack?.({ ok: false, error: "Conversation could not be opened" });
+      }
     });
 
     socket.on("message:send", async (payload = {}, ack) => {
@@ -54,7 +58,7 @@ export function initSocket(server) {
         });
         ack?.({ ok: true, message });
       } catch (error) {
-        ack?.({ ok: false, error: error.message || "Message failed" });
+        ack?.({ ok: false, error: error?.status && error.status < 500 ? error.message : "Message failed" });
       }
     });
 
@@ -80,8 +84,12 @@ export function initSocket(server) {
       clearInterval(heartbeat);
       const room = io.sockets.adapter.rooms.get(`user:${userId}`);
       if (!room || room.size === 0) {
-        await cacheDel(`presence:${userId}`);
-        io.emit("presence", { userId, online: false });
+        try {
+          await cacheDel(`presence:${userId}`);
+          io.emit("presence", { userId, online: false });
+        } catch {
+          /* Presence cleanup is best-effort. */
+        }
       }
     });
   });

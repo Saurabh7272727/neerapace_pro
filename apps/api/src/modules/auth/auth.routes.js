@@ -1,6 +1,8 @@
+import crypto from "node:crypto";
 import { Router } from "express";
 import { forgotSchema, loginSchema, profileSchema, registerSchema, resendOtpSchema, resetSchema, verifyOtpSchema } from "@neerapace/shared";
 import { env } from "../../config/env.js";
+import { cacheGetDel, cacheSet } from "../../config/redis.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { sensitiveLimiter } from "../../middleware/rateLimit.js";
 import { validateBody } from "../../middleware/validate.js";
@@ -12,6 +14,24 @@ const router = Router();
 const loginLimit = sensitiveLimiter("login", 10, 15 * 60 * 1000);
 const otpLimit = sensitiveLimiter("otp", 5, 15 * 60 * 1000);
 const registerLimit = sensitiveLimiter("register", 8, 60 * 60 * 1000);
+const googleStartLimit = sensitiveLimiter("google-start", 20, 15 * 60 * 1000);
+const GOOGLE_STATE_TTL_SECONDS = 10 * 60;
+const GOOGLE_STATE_COOKIE = "np_google_state";
+
+function clearGoogleStateCookie(res) {
+  res.clearCookie(GOOGLE_STATE_COOKIE, {
+    httpOnly: true,
+    secure: env.COOKIE_SECURE,
+    sameSite: "lax",
+    path: "/api/auth/google",
+  });
+}
+
+function googleLoginError(res, code) {
+  const target = new URL("/login", env.CLIENT_ORIGIN);
+  target.searchParams.set("google_error", code);
+  return res.redirect(target.toString());
+}
 
 router.get("/csrf", (req, res) => {
   const token = req.cookies?.np_csrf || newCsrfToken();
@@ -71,17 +91,54 @@ router.patch("/me", requireAuth, validateBody(profileSchema), asyncHandler(async
   res.json({ data: await auth.updateProfile(req.user, req.body) });
 }));
 
-router.post("/google", sensitiveLimiter("google-login", 8, 15 * 60 * 1000), asyncHandler(async (req, res) => {
-  const session = await auth.googleSignIn(req.body?.credential);
-  setAuthCookies(res, session);
-  res.json({ data: { user: session.user } });
+router.get("/google/start", googleStartLimit, asyncHandler(async (_req, res) => {
+  const state = crypto.randomBytes(32).toString("base64url");
+  const nonce = crypto.randomBytes(32).toString("base64url");
+  const authorizationUrl = await auth.googleAuthorizationUrl(state, nonce);
+  await cacheSet(`oauth:google:${state}`, nonce, GOOGLE_STATE_TTL_SECONDS);
+  res.cookie(GOOGLE_STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: env.COOKIE_SECURE,
+    sameSite: "lax",
+    path: "/api/auth/google",
+    maxAge: GOOGLE_STATE_TTL_SECONDS * 1000,
+  });
+  res.redirect(authorizationUrl);
+}));
+
+router.get("/google/callback", asyncHandler(async (req, res) => {
+  const state = typeof req.query.state === "string" ? req.query.state : "";
+  const cookieState = req.cookies?.[GOOGLE_STATE_COOKIE] || "";
+  clearGoogleStateCookie(res);
+
+  if (!state || !cookieState || state !== cookieState) {
+    return googleLoginError(res, "state");
+  }
+  const nonce = await cacheGetDel(`oauth:google:${state}`);
+  if (typeof nonce !== "string" || !nonce) return googleLoginError(res, "state");
+  if (req.query.error) return googleLoginError(res, req.query.error === "access_denied" ? "cancelled" : "failed");
+  if (typeof req.query.code !== "string") return googleLoginError(res, "failed");
+
+  try {
+    const session = await auth.googleSignInWithCode(req.query.code, nonce);
+    setAuthCookies(res, session);
+    const destination = session.user.role === "admin"
+      ? "/app/admin"
+      : session.user.role === "coach"
+        ? "/app/coach"
+        : "/app/student";
+    return res.redirect(new URL(destination, env.CLIENT_ORIGIN).toString());
+  } catch {
+    return googleLoginError(res, "failed");
+  }
 }));
 
 router.get("/google/config", (_req, res) => {
+  const enabled = env.GOOGLE_SSO_ENABLED === "true" && Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
   res.json({
     data: {
-      enabled: env.GOOGLE_SSO_ENABLED === "true" && Boolean(env.GOOGLE_CLIENT_ID),
-      clientId: env.GOOGLE_SSO_ENABLED === "true" ? env.GOOGLE_CLIENT_ID : "",
+      enabled,
+      clientId: enabled ? env.GOOGLE_CLIENT_ID : "",
     },
   });
 });

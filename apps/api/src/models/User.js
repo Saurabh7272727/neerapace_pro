@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
       url: { type: String, default: "" },
     },
     lastLoginAt: Date,
+    authVersion: { type: Number, default: 0 },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true },

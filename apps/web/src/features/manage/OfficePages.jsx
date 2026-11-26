@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { tableFeatures, useTable } from "@tanstack/react-table";
 import { useState } from "react";
 import { announcementSchema, batchSchema, coachCreateSchema, coachUpdateSchema, gallerySchema, pageSchema, programSchema, registerSchema, studentUpdateSchema } from "@neerapace/shared";
 import { Badge, Button, Empty, ErrorNote, Field, Modal, PageTitle, Spinner, inputClass } from "../../components/ui.jsx";
+import { ImagePicker } from "../../components/ImagePicker.jsx";
 import { useSession } from "../../hooks/useSession.js";
 import { api, fieldErrors, imageUrl } from "../../lib/api.js";
 
@@ -12,13 +14,22 @@ function useInvalidate(keys) {
 
 export function StudentsPage() {
   const session = useSession();
-  const students = useQuery({ queryKey: ["students"], queryFn: () => api.get(session.data?.role === "admin" ? "/students?status=approved" : "/students") });
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const students = useQuery({ queryKey: ["students", page, search, session.data?.role], queryFn: () => api.getPage(`/students?${new URLSearchParams({ ...(session.data?.role === "admin" ? { status: "approved" } : {}), page: String(page), limit: "30", ...(search ? { q: search } : {}) })}`) });
   const programs = useQuery({ queryKey: ["programs-all"], queryFn: () => api.get("/programs/all"), enabled: session.data?.role === "admin" });
   const refresh = useInvalidate(["students", "stats"]);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState(null);
   const [errors, setErrors] = useState({});
   const admin = session.data?.role === "admin";
+  const rows = students.data?.data || [];
+  const table = useTable({ features: tableFeatures({}), data: rows, columns: [
+    { accessorKey: "name", header: "Player" },
+    { accessorKey: "registrationId", header: "Registration" },
+    { accessorFn: (row) => row.program?.name || "—", id: "program", header: "Program" },
+    { accessorFn: (row) => row.batch?.name || "—", id: "batch", header: "Batch" },
+  ] });
 
   async function createStudent(event) {
     event.preventDefault();
@@ -54,20 +65,21 @@ export function StudentsPage() {
         {admin ? <Button onClick={() => setOpen(true)}>Add player</Button> : null}
       </div>
       <ErrorNote error={error} />
+      {admin ? <input className={`${inputClass} mt-4 max-w-md`} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search players" aria-label="Search players" /> : null}
       {students.isLoading ? <Spinner /> : null}
       <div className="mt-6 overflow-auto rounded-3xl border border-line bg-paper">
         <table className="w-full min-w-160 text-left text-sm">
-          <thead className="text-ink/60"><tr><th className="px-4 py-3">Player</th><th>Registration</th><th>Program</th><th>Batch</th>{admin ? <th>Action</th> : null}</tr></thead>
-          <tbody>{(students.data || []).map((student) => (
-            <tr key={student.id} className="border-t border-line">
-              <td className="px-4 py-3">{student.name}<div className="text-ink/60">{student.email}</div></td>
-              <td>{student.registrationId}</td><td>{student.program?.name}</td><td>{student.batch?.name || "—"}</td>
-              {admin ? <td><Button variant="danger" onClick={() => removeStudent(student.userId)}>Remove</Button></td> : null}
+          <thead className="text-ink/60">{table.getHeaderGroups().map((group) => <tr key={group.id}>{group.headers.map((header) => <th className="px-4 py-3" key={header.id}>{header.isPlaceholder ? null : <table.FlexRender header={header} />}</th>)}{admin ? <th className="px-4 py-3">Action</th> : null}</tr>)}</thead>
+          <tbody>{table.getRowModel().rows.map((row) => (
+            <tr key={row.id} className="border-t border-line">
+              {row.getAllCells().map((cell) => <td className="px-4 py-3" key={cell.id}>{cell.column.id === "name" ? <>{row.original.name}<div className="text-ink/60">{row.original.email}</div></> : <table.FlexRender cell={cell} />}</td>)}
+              {admin ? <td className="px-4 py-3"><Button variant="danger" onClick={() => removeStudent(row.original.userId)}>Remove</Button></td> : null}
             </tr>
           ))}</tbody>
         </table>
       </div>
-      {!students.data?.length && !students.isLoading ? <div className="mt-6"><Empty title="No players" body="Approved players appear after admission or an office entry." /></div> : null}
+      {!rows.length && !students.isLoading ? <div className="mt-6"><Empty title="No players" body="Approved players appear after admission or an office entry." /></div> : null}
+      {admin && students.data?.meta ? <div className="mt-4 flex items-center justify-between text-sm"><span>{students.data.meta.total} players · page {page}</span><div className="flex gap-2"><Button variant="ghost" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button variant="ghost" disabled={page * students.data.meta.limit >= students.data.meta.total} onClick={() => setPage((value) => value + 1)}>Next</Button></div></div> : null}
       <Modal open={open} title="Add player" onClose={() => setOpen(false)}>
         <form className="grid gap-3" onSubmit={createStudent}>
           {[["name", "Player name", "text"], ["email", "Email", "email"], ["phone", "Phone", "text"], ["password", "Password", "password"], ["dateOfBirth", "Date of birth", "date"], ["address", "Address", "text"], ["guardianName", "Guardian name", "text"], ["guardianPhone", "Guardian phone", "text"], ["guardianEmail", "Guardian email", "email"]].map(([name, label, type]) => (
@@ -442,10 +454,10 @@ export function GalleryAdminPage() {
   const gallery = useQuery({ queryKey: ["gallery-manage"], queryFn: () => api.get("/gallery/manage") });
   const refresh = useInvalidate(["gallery-manage", "gallery"]);
   const [error, setError] = useState(null);
+  const [file, setFile] = useState(null);
   async function add(event) {
     event.preventDefault();
     const form = event.currentTarget;
-    const file = form.file.files[0];
     const caption = form.caption.value;
     try {
       let imageUrlValue = form.imageUrl.value;
@@ -459,6 +471,7 @@ export function GalleryAdminPage() {
       if (!parsed.success) return setError({ message: "Add an https image URL or upload a file. Cloudinary must be configured for uploads." });
       await api.post("/gallery", parsed.data);
       form.reset();
+      setFile(null);
       refresh();
       setError(null);
     } catch (err) {
@@ -471,7 +484,7 @@ export function GalleryAdminPage() {
       <h1 className="font-serif text-4xl text-pitch">Gallery</h1>
       <form className="mt-6 grid gap-3 rounded-3xl border border-line bg-paper p-5" onSubmit={add}>
         <Field label="Image URL"><input className={inputClass} name="imageUrl" placeholder="https://" /></Field>
-        <Field label="Or upload"><input name="file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" /></Field>
+        <ImagePicker label="Choose gallery photo" name="file" file={file} onFileChange={setFile} />
         <Field label="Caption"><input className={inputClass} name="caption" /></Field>
         <ErrorNote error={error} />
         <Button type="submit">Add picture</Button>

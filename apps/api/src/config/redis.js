@@ -54,6 +54,19 @@ export async function cacheGet(key) {
   return readMemory(key);
 }
 
+export async function cacheGetDel(key) {
+  if (mode === "redis" && client) {
+    return client.eval(
+      "local value = redis.call('GET', KEYS[1]); if value then redis.call('DEL', KEYS[1]); end; return value",
+      1,
+      key,
+    );
+  }
+  const value = readMemory(key);
+  memory.delete(key);
+  return value;
+}
+
 export async function cacheSet(key, value, ttlSeconds) {
   if (mode === "redis" && client) {
     await client.set(key, value, "EX", ttlSeconds);
@@ -74,9 +87,12 @@ export async function cacheDel(...keys) {
 
 export async function cacheIncr(key, ttlSeconds) {
   if (mode === "redis" && client) {
-    const count = await client.incr(key);
-    if (count === 1) await client.expire(key, ttlSeconds);
-    return count;
+    return Number(await client.eval(
+      "local count = redis.call('INCR', KEYS[1]); if count == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]); end; return count",
+      1,
+      key,
+      ttlSeconds,
+    ));
   }
   const row = memory.get(key);
   const expired = !row || (row.expiresAt && Date.now() > row.expiresAt);
