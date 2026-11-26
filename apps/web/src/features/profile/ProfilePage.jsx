@@ -14,6 +14,7 @@ export function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(null);
   if (!user) return null;
 
   async function save(event) {
@@ -36,9 +37,10 @@ export function ProfilePage() {
     if (!file) return;
     setAvatarFile(file);
     setAvatarUploading(true);
+    setAvatarProgress(0);
     setAvatarError(null);
     try {
-      const uploaded = await api.upload("avatars", file);
+      const uploaded = await api.upload("avatars", file, setAvatarProgress);
       await api.patch("/auth/me", { avatarUrl: uploaded.url, avatarPublicId: uploaded.publicId });
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       setAvatarFile(null);
@@ -46,6 +48,7 @@ export function ProfilePage() {
       setAvatarError(err);
     } finally {
       setAvatarUploading(false);
+      setAvatarProgress(null);
     }
   }
 
@@ -54,9 +57,9 @@ export function ProfilePage() {
       <PageTitle title="Profile" />
       <h1 className="font-serif text-4xl text-pitch">Profile</h1>
       <div className="mt-4 max-w-lg">
-        <ImagePicker label={avatarUploading ? "Uploading..." : "Choose profile photo"} file={avatarFile} onFileChange={uploadAvatar} currentUrl={user.avatarUrl ? imageUrl(user.avatarUrl, 160) : ""} disabled={avatarUploading} />
+        <ImagePicker label={avatarUploading ? "Uploading..." : "Choose profile photo"} file={avatarFile} onFileChange={uploadAvatar} currentUrl={user.avatarUrl ? imageUrl(user.avatarUrl, 160) : ""} disabled={avatarUploading} uploadProgress={avatarProgress} />
       </div>
-      {avatarUploading ? <p className="mt-2 text-sm text-ink/60" role="status">Uploading and converting your photo...</p> : null}
+      {avatarUploading && avatarProgress === 100 ? <p className="mt-2 text-sm text-ink/60" role="status">Upload complete; saving your profile photo...</p> : null}
       <ErrorNote error={avatarError} />
       <form className="mt-6 grid gap-3" onSubmit={save}>
         <Field label="Name"><input className={inputClass} name="name" defaultValue={user.name} /></Field>

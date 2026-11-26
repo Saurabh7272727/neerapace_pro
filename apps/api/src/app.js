@@ -18,7 +18,7 @@ export function createApp() {
   app.set("trust proxy", 1);
   app.disable("x-powered-by");
   app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-  app.use(cors({ origin: [env.CLIENT_ORIGIN, process.env.CLIENT_ORIGIN2], credentials: true }));
+  app.use(cors({ origin: [env.CLIENT_ORIGIN, process.env.CLIENT_ORIGIN2].filter(Boolean), credentials: true }));
   app.use(cookieParser());
   app.use((req, res, next) => {
     const started = Date.now();
@@ -28,9 +28,11 @@ export function createApp() {
     });
     next();
   });
-  app.use(express.json({ type: "*/*", limit: "5mb" }));
+
+  // 1. Inngest webhook (mounted before CSRF, with its own 4mb JSON parser)
   app.use("/api/inngest", express.json({ limit: "4mb" }), serve({ client: inngest, functions }));
 
+  // 2. Main HTTP API routes (1mb JSON limit + CSRF protection)
   const httpApi = express.Router();
   httpApi.use(express.json({ limit: "1mb" }));
   httpApi.get("/health", async (_req, res) => {

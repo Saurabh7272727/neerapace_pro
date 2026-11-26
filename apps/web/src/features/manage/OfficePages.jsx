@@ -455,15 +455,19 @@ export function GalleryAdminPage() {
   const refresh = useInvalidate(["gallery-manage", "gallery"]);
   const [error, setError] = useState(null);
   const [file, setFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploading, setUploading] = useState(false);
   async function add(event) {
     event.preventDefault();
     const form = event.currentTarget;
     const caption = form.caption.value;
+    setUploading(true);
+    setUploadProgress(file ? 0 : null);
     try {
       let imageUrlValue = form.imageUrl.value;
       let publicId = "";
       if (file) {
-        const uploaded = await api.upload("gallery", file);
+        const uploaded = await api.upload("gallery", file, setUploadProgress);
         imageUrlValue = uploaded.url;
         publicId = uploaded.publicId;
       }
@@ -476,6 +480,9 @@ export function GalleryAdminPage() {
       setError(null);
     } catch (err) {
       setError(err);
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
     }
   }
   return (
@@ -484,10 +491,10 @@ export function GalleryAdminPage() {
       <h1 className="font-serif text-4xl text-pitch">Gallery</h1>
       <form className="mt-6 grid gap-3 rounded-3xl border border-line bg-paper p-5" onSubmit={add}>
         <Field label="Image URL"><input className={inputClass} name="imageUrl" placeholder="https://" /></Field>
-        <ImagePicker label="Choose gallery photo" name="file" file={file} onFileChange={setFile} />
+        <ImagePicker label={uploading ? "Uploading..." : "Choose gallery photo"} name="file" file={file} onFileChange={setFile} disabled={uploading} uploadProgress={uploadProgress} />
         <Field label="Caption"><input className={inputClass} name="caption" /></Field>
         <ErrorNote error={error} />
-        <Button type="submit">Add picture</Button>
+        <Button type="submit" disabled={uploading}>{uploading ? "Uploading picture..." : "Add picture"}</Button>
       </form>
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {(gallery.data || []).map((item) => (

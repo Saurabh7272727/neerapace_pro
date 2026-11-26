@@ -66,13 +66,46 @@ export const api = {
   patch: async (path, payload) => (await request(path, { method: "PATCH", body: JSON.stringify(payload) })).data,
   put: async (path, payload) => (await request(path, { method: "PUT", body: JSON.stringify(payload) })).data,
   del: async (path) => (await request(path, { method: "DELETE" })).data,
-  async upload(folder, file) {
+  async upload(folder, file, onProgress) {
     const validationError = imageFileError(file);
     if (validationError) throw new ApiClientError(400, "UPLOAD", validationError);
     const body = new FormData();
     body.append("folder", folder);
     body.append("file", file);
-    return (await request("/uploads", { method: "POST", body })).data;
+    await ensureCsrf();
+    beginRequest();
+    try {
+      return await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/uploads");
+        xhr.withCredentials = true;
+        const token = readBrowserCookie("np_csrf");
+        if (token) xhr.setRequestHeader("X-CSRF-Token", token);
+        xhr.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+        });
+        xhr.addEventListener("load", () => {
+          let response;
+          try {
+            response = JSON.parse(xhr.responseText || "{}");
+          } catch {
+            reject(new ApiClientError(xhr.status, "UPLOAD_RESPONSE", "The server returned an invalid upload response. Please try again."));
+            return;
+          }
+          if (xhr.status < 200 || xhr.status >= 300) {
+            reject(new ApiClientError(xhr.status, response.error?.code || "UPLOAD", response.error?.message || "Image upload failed."));
+            return;
+          }
+          onProgress?.(100);
+          resolve(response.data);
+        });
+        xhr.addEventListener("error", () => reject(new ApiClientError(0, "NETWORK", "Upload failed because of a network error. Please try again.")));
+        xhr.addEventListener("abort", () => reject(new ApiClientError(0, "UPLOAD_ABORTED", "Upload was cancelled.")));
+        xhr.send(body);
+      });
+    } finally {
+      endRequest();
+    }
   },
 };
 

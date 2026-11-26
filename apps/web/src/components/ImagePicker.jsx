@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { IMAGE_ACCEPT, imageFileError } from "../lib/imageUpload.js";
 
-export function ImagePicker({ label = "Choose image", file, onFileChange, currentUrl = "", name = "file", compact = false, disabled = false, previewOnly = false }) {
+export function ImagePicker({ label = "Choose image", file, onFileChange, currentUrl = "", name = "file", compact = false, disabled = false, previewOnly = false, uploadProgress = null }) {
   const [previewUrl, setPreviewUrl] = useState("");
   const [error, setError] = useState("");
 
@@ -43,6 +43,15 @@ export function ImagePicker({ label = "Choose image", file, onFileChange, curren
         </div>
         {file ? <button type="button" disabled={disabled} className="shrink-0 text-xs font-medium text-clay disabled:opacity-50" onClick={() => { onFileChange(null); setError(""); }}>Remove</button> : null}
       </div>
+      {uploadProgress !== null ? (
+        <div className="mt-3" role="status" aria-live="polite">
+          <div className="mb-1 flex justify-between text-xs text-ink/65"><span>Uploading image…</span><span>{uploadProgress}%</span></div>
+          <div className="h-2 overflow-hidden rounded-full bg-white" role="progressbar" aria-label="Image upload progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={uploadProgress}>
+            <div className="h-full rounded-full bg-fairway transition-[width] duration-200" style={{ width: `${uploadProgress}%` }} />
+          </div>
+          {uploadProgress === 100 ? <p className="mt-1 text-xs text-ink/55">Finishing image processing…</p> : null}
+        </div>
+      ) : null}
       {error ? <p className="mt-2 text-sm text-clay" role="alert">{error}</p> : null}
     </div>
   );

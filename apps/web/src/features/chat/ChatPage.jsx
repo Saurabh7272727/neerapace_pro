@@ -37,6 +37,7 @@ export function ChatPage() {
   const [draft, setDraft] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imageSending, setImageSending] = useState(false);
+  const [imageProgress, setImageProgress] = useState(null);
   const [contactSearch, setContactSearch] = useState("");
   const [composeMode, setComposeMode] = useState("chat");
   const [emailSubject, setEmailSubject] = useState("");
@@ -187,9 +188,10 @@ export function ChatPage() {
     if (!imageFile || !activeId || imageSending) return;
     const conversationId = activeId;
     setImageSending(true);
+    setImageProgress(0);
     setError(null);
     try {
-      const uploaded = await api.upload("chat", imageFile);
+      const uploaded = await api.upload("chat", imageFile, setImageProgress);
       const message = await api.post(`/chat/conversations/${conversationId}/messages`, { imageUrl: uploaded.url, imagePublicId: uploaded.publicId });
       setImageFile(null);
       if (activeId !== conversationId) {
@@ -202,6 +204,7 @@ export function ChatPage() {
       if (activeId === conversationId) setError(err);
     } finally {
       setImageSending(false);
+      setImageProgress(null);
     }
   }
 
@@ -351,7 +354,7 @@ export function ChatPage() {
 
             {composeMode === "chat" ? <div className="border-t border-line bg-white/75 p-3 sm:px-5 sm:py-4">
               <ErrorNote error={error} />
-              {imageFile ? <div className="mb-2 flex flex-wrap items-end gap-2"><ImagePicker compact previewOnly file={imageFile} onFileChange={setImageFile} /><Button type="button" disabled={imageSending} onClick={sendImage}>{imageSending ? "Uploading..." : "Send photo"}</Button></div> : null}
+              {imageFile ? <div className="mb-2 flex flex-wrap items-end gap-2"><ImagePicker compact previewOnly file={imageFile} onFileChange={setImageFile} uploadProgress={imageProgress} /><Button type="button" disabled={imageSending} onClick={sendImage}>{imageSending ? (imageProgress === 100 ? "Finishing..." : `Uploading ${imageProgress ?? 0}%`) : "Send photo"}</Button></div> : null}
               <form className="mt-2 flex items-end gap-2" onSubmit={send}>
                 <label className="grid h-11 shrink-0 cursor-pointer place-items-center rounded-full border border-line px-3 text-xs font-medium text-ink/70 transition hover:bg-cream" aria-label="Attach an image">
                   <span aria-hidden="true">＋</span>
