@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84" width="84" height="84" fill="none">
+  <defs>
+    <linearGradient id="mGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+    <linearGradient id="mGreen" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#15803D" />
+      <stop offset="55%" stop-color="#22C55E" />
+      <stop offset="100%" stop-color="#86EFAC" />
+    </linearGradient>
+    <linearGradient id="mBall" x1="20%" y1="15%" x2="85%" y2="85%">
+      <stop offset="0%" stop-color="#4ADE80" />
+      <stop offset="55%" stop-color="#16A34A" />
+      <stop offset="100%" stop-color="#052E16" />
+    </linearGradient>
+  </defs>
+
+  
+  <circle cx="42" cy="42" r="39" fill="#0B1120" stroke="url(#mGold)" stroke-width="2.5" />
+  <circle cx="42" cy="42" r="34" stroke="#22C55E" stroke-opacity="0.25" stroke-width="1" />
+
+  
+  <g transform="translate(5, 2)">
+    <polygon points="16,20 26,20 26,64 16,64" fill="url(#mGold)" />
+    <polygon points="48,30 58,25 58,64 48,64" fill="url(#mGold)" />
+    <polygon points="16,20 27,20 58,64 47,64" fill="url(#mGreen)" />
+
+    
+    <path d="M10 58 C 24 53, 38 41, 51 25" stroke="url(#mGold)" stroke-width="3.2" stroke-linecap="round" />
+    <path d="M14 64 C 29 58, 43 45, 55 30" stroke="url(#mGreen)" stroke-width="2.2" stroke-linecap="round" />
+
+    
+    <circle cx="57" cy="22" r="9.5" fill="url(#mBall)" stroke="#FDE047" stroke-width="1.2" />
+    <path d="M50 17 C 54 19.5, 58 24, 60.5 29" stroke="#FFFFFF" stroke-width="1.2" stroke-dasharray="1.8 1.4" stroke-linecap="round" />
+  </g>
+</svg>

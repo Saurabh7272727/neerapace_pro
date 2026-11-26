@@ -27,15 +27,17 @@ export function PublicLayout() {
   }, [menuOpen]);
 
   return (
-    <div className="min-h-screen overflow-x-hidden">
+    <div className="min-h-screen overflow-x-clip">
       <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-paper focus:px-3 focus:py-2">Skip to content</a>
       <header className="glass sticky top-0 z-40 border-b border-line/80">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-5 lg:px-8">
-          <Link to="/" className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-full bg-pitch font-serif text-gold shadow-lg">NP</span>
-            <span><span className="block font-serif text-xl leading-none text-pitch">Neera Pace</span><span className="mt-1 block text-[10px] uppercase tracking-[0.24em] text-ink/50">Cricket Academy</span></span>
+          <Link to="/" className="flex shrink-0 items-center rounded-xl md:bg-pitch md:px-2 md:py-1">
+            <picture>
+              <source media="(min-width: 768px)" srcSet="/desktopView.svg" />
+              <img src="/mobileView.svg" alt="Neera Pace Cricket Academy" className="h-11 w-11 object-contain md:h-[42px] md:w-[190px] lg:h-[49px] lg:w-[220px]" />
+            </picture>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm md:flex">
+          <nav className="hidden items-center gap-4 text-sm md:flex lg:gap-7">
             {links.map(([label, to]) => (
               <NavLink key={to} to={to} className={({ isActive }) => `transition ${isActive ? "font-medium text-fairway" : "text-ink/70 hover:text-pitch"}`}>{label}</NavLink>
             ))}
@@ -45,7 +47,7 @@ export function PublicLayout() {
               <Link to={homeForRole(session.data.role)} className="rounded-full bg-pitch px-5 py-2.5 text-cream shadow-lg shadow-pitch/15">Dashboard</Link>
             ) : (
               <>
-                <Link to="/login" className="hidden px-3 py-2 text-pitch sm:inline">Sign in</Link>
+                <Link to="/login" className="hidden px-3 py-2 text-pitch lg:inline">Sign in</Link>
                 <Link to="/register" className="rounded-full bg-gold px-4 py-2.5 font-medium text-pitch shadow-lg shadow-gold/20">Join academy</Link>
               </>
             )}
@@ -60,7 +62,7 @@ export function PublicLayout() {
       <div onClick={() => setMenuOpen(false)} className={`fixed inset-0 z-30 bg-pitch-dark/55 backdrop-blur-sm transition-opacity md:hidden ${menuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} aria-hidden={!menuOpen} />
       <aside className={`fixed right-0 top-0 z-40 h-dvh w-[min(86vw,340px)] bg-paper p-5 shadow-2xl transition-transform duration-300 md:hidden ${menuOpen ? "translate-x-0" : "translate-x-full"}`} aria-label="Mobile navigation">
         <div className="flex items-center justify-between">
-          <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full bg-pitch font-serif text-gold">NP</span><span className="font-serif text-xl text-pitch">Neera Pace</span></Link>
+          <Link to="/" onClick={() => setMenuOpen(false)} className="flex items-center"><img src="/mobileView.svg" alt="Neera Pace Cricket Academy" className="h-10 w-10 object-contain" /></Link>
           <button type="button" aria-label="Close navigation menu" onClick={() => setMenuOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border border-line text-xl text-pitch">×</button>
         </div>
         <nav className="mt-8 flex-1">
@@ -85,36 +87,42 @@ export function PublicLayout() {
       <footer className="relative mt-16 overflow-hidden bg-pitch text-cream">
         <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-32 h-96 w-96 rounded-full border border-gold/15 bg-gold/5" />
         <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-16 h-64 w-64 rounded-full border border-gold/10" />
-        <div className="relative mx-auto max-w-7xl px-5 pb-6 pt-12 sm:px-8 lg:pt-16">
-          <div className="grid gap-10 border-b border-cream/15 pb-10 lg:grid-cols-[1.4fr_.8fr_.8fr_1.2fr]">
-            <div>
-              <Link to="/" className="inline-flex items-center gap-3">
-                <span className="grid h-11 w-11 place-items-center rounded-full border border-gold/30 bg-gold/10 font-serif text-lg text-gold">NP</span>
-                <span><span className="block font-serif text-2xl leading-none">Neera Pace</span><span className="mt-1 block text-[10px] uppercase tracking-[0.24em] text-cream/55">Cricket Academy</span></span>
+        <div className="relative mx-auto max-w-7xl px-4 pb-6 pt-10 sm:px-6 sm:pb-8 sm:pt-14 lg:px-8 lg:pt-16">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-8 border-b border-cream/15 pb-8 sm:gap-x-8 sm:gap-y-10 sm:pb-10 lg:grid-cols-[1.4fr_.8fr_.8fr_1.2fr]">
+            <div className="col-span-2 min-w-0 lg:col-span-1">
+              <Link to="/" className="inline-flex max-w-full items-center rounded-xl">
+                <picture>
+                  <source media="(min-width: 768px)" srcSet="/desktopView.svg" />
+                  <img
+                    src="/mobileView.svg"
+                    alt="Neera Pace Cricket Academy"
+                    className="h-12 w-12 object-contain md:h-[58px] md:w-[262px] lg:h-[62px] lg:w-[280px]"
+                  />
+                </picture>
               </Link>
-              <p className="mt-5 max-w-sm text-sm leading-6 text-cream/65">A place to learn the craft, enjoy the game and grow with your squad.</p>
+              <p className="mt-4 max-w-sm text-sm leading-6 text-cream/65">A place to learn the craft, enjoy the game and grow with your squad.</p>
             </div>
-            <nav aria-label="Explore" className="text-sm">
+            <nav aria-label="Explore" className="min-w-0 text-sm">
               <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-gold">Explore</h2>
               <div className="grid gap-3 text-cream/70">
-                <Link className="transition hover:text-cream" to="/programs">Programs</Link>
-                <Link className="transition hover:text-cream" to="/coaches">Coaches</Link>
-                <Link className="transition hover:text-cream" to="/facilities">Facilities</Link>
-                <Link className="transition hover:text-cream" to="/gallery">Gallery</Link>
+                <Link className="transition-colors hover:text-gold" to="/programs">Programs</Link>
+                <Link className="transition-colors hover:text-gold" to="/coaches">Coaches</Link>
+                <Link className="transition-colors hover:text-gold" to="/facilities">Facilities</Link>
+                <Link className="transition-colors hover:text-gold" to="/gallery">Gallery</Link>
               </div>
             </nav>
-            <nav aria-label="Academy" className="text-sm">
+            <nav aria-label="Academy" className="min-w-0 text-sm">
               <h2 className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-gold">Academy</h2>
               <div className="grid gap-3 text-cream/70">
-                <Link className="transition hover:text-cream" to="/about">Our story</Link>
-                <Link className="transition hover:text-cream" to="/contact">Contact</Link>
-                <Link className="transition hover:text-cream" to="/login">Sign in</Link>
+                <Link className="transition-colors hover:text-gold" to="/about">Our story</Link>
+                <Link className="transition-colors hover:text-gold" to="/contact">Contact</Link>
+                <Link className="transition-colors hover:text-gold" to="/login">Sign in</Link>
               </div>
             </nav>
-            <div className="rounded-3xl border border-cream/15 bg-white/5 p-5 backdrop-blur-sm">
+            <div className="col-span-2 min-w-0 rounded-3xl border border-cream/15 bg-white/5 p-5 backdrop-blur-sm sm:p-6 lg:col-span-1">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gold">Ready for your next innings?</p>
               <p className="mt-2 text-sm leading-6 text-cream/70">Explore the training pathways and take the first step towards joining the academy.</p>
-              <Link to="/register" className="mt-4 inline-flex items-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-pitch transition hover:-translate-y-0.5 hover:bg-[#d4b36e]">
+              <Link to="/register" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-gold px-5 py-2.5 text-sm font-semibold text-pitch transition hover:-translate-y-0.5 hover:bg-[#d4b36e] sm:w-auto">
                 Start an application <span aria-hidden="true">→</span>
               </Link>
             </div>

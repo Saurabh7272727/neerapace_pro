@@ -42,6 +42,10 @@ body {
   -webkit-backdrop-filter: blur(18px);
 }
 
+.demo-content {
+  min-width: 0;
+}
+
 .hero-grid {
   background:
     radial-gradient(circle at 78% 42%, rgba(198, 161, 91, 0.24), transparent 13rem),
@@ -188,6 +192,10 @@ textarea {
 }
 
 @media (max-width: 767px) {
+  .demo-content {
+    overflow-wrap: anywhere;
+  }
+
   body {
     overflow-x: hidden;
   }
