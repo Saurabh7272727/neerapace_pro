@@ -1,21 +1,32 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { tableFeatures, useTable } from "@tanstack/react-table";
-import { useState } from "react";
-import { announcementSchema, batchSchema, coachCreateSchema, coachUpdateSchema, gallerySchema, pageSchema, programSchema, registerSchema, studentUpdateSchema } from "@neerapace/shared";
+import { useEffect, useRef, useState } from "react";
+import { announcementSchema, bannerSchema, batchSchema, coachCreateSchema, coachUpdateSchema, gallerySchema, pageSchema, programSchema, registerSchema, studentUpdateSchema } from "@neerapace/shared";
 import { Badge, Button, Empty, ErrorNote, Field, Modal, PageTitle, Spinner, inputClass } from "../../components/ui.jsx";
 import { ImagePicker } from "../../components/ImagePicker.jsx";
 import { useSession } from "../../hooks/useSession.js";
 import { api, fieldErrors, imageUrl } from "../../lib/api.js";
+import { StudentContactActions } from "./StudentContactActions.jsx";
 
 function useInvalidate(keys) {
   const queryClient = useQueryClient();
   return () => keys.forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
 }
 
+function bannerErrorMessage(error, action = "complete this action") {
+  if (error?.code === "BANNER_LIMIT") return error.message;
+  if (error?.code === "UPLOADS_UNAVAILABLE") return "Photo uploads are not configured right now. Contact the site administrator.";
+  if (error?.status === 401) return "Your admin session expired. Sign in again and retry.";
+  if (error?.status === 403) return "Admin access is required to manage homepage banners.";
+  if (error?.status === 0 || error instanceof TypeError) return `Couldn't ${action} because the server couldn't be reached. Check your connection and retry.`;
+  if (error?.status >= 500) return `Couldn't ${action} right now. Please retry in a moment.`;
+  return error?.message || `Couldn't ${action}. Please check the details and retry.`;
+}
+
 export function StudentsPage() {
   const session = useSession();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState("");
   const students = useQuery({ queryKey: ["students", page, search, session.data?.role], queryFn: () => api.getPage(`/students?${new URLSearchParams({ ...(session.data?.role === "admin" ? { status: "approved" } : {}), page: String(page), limit: "30", ...(search ? { q: search } : {}) })}`) });
   const programs = useQuery({ queryKey: ["programs-all"], queryFn: () => api.get("/programs/all"), enabled: session.data?.role === "admin" });
   const refresh = useInvalidate(["students", "stats"]);
@@ -24,12 +35,11 @@ export function StudentsPage() {
   const [errors, setErrors] = useState({});
   const admin = session.data?.role === "admin";
   const rows = students.data?.data || [];
-  const table = useTable({ features: tableFeatures({}), data: rows, columns: [
-    { accessorKey: "name", header: "Player" },
-    { accessorKey: "registrationId", header: "Registration" },
-    { accessorFn: (row) => row.program?.name || "—", id: "program", header: "Program" },
-    { accessorFn: (row) => row.batch?.name || "—", id: "batch", header: "Batch" },
-  ] });
+  const selectedStudent = admin ? rows.find((student) => student.userId === selectedStudentId) : null;
+  const studentDetailsRef = useRef(null);
+  useEffect(() => {
+    if (selectedStudent) studentDetailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectedStudent?.userId]);
 
   async function createStudent(event) {
     event.preventDefault();
@@ -65,18 +75,60 @@ export function StudentsPage() {
         {admin ? <Button onClick={() => setOpen(true)}>Add player</Button> : null}
       </div>
       <ErrorNote error={error} />
-      {admin ? <input className={`${inputClass} mt-4 max-w-md`} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search players" aria-label="Search players" /> : null}
+      {admin ? <input className={`${inputClass} mt-4 max-w-md`} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); setSelectedStudentId(""); }} placeholder="Search players" aria-label="Search players" /> : null}
       {students.isLoading ? <Spinner /> : null}
-      <div className="mt-6 overflow-auto rounded-3xl border border-line bg-paper">
-        <table className="w-full min-w-160 text-left text-sm">
-          <thead className="text-ink/60">{table.getHeaderGroups().map((group) => <tr key={group.id}>{group.headers.map((header) => <th className="px-4 py-3" key={header.id}>{header.isPlaceholder ? null : <table.FlexRender header={header} />}</th>)}{admin ? <th className="px-4 py-3">Action</th> : null}</tr>)}</thead>
-          <tbody>{table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-t border-line">
-              {row.getAllCells().map((cell) => <td className="px-4 py-3" key={cell.id}>{cell.column.id === "name" ? <>{row.original.name}<div className="text-ink/60">{row.original.email}</div></> : <table.FlexRender cell={cell} />}</td>)}
-              {admin ? <td className="px-4 py-3"><Button variant="danger" onClick={() => removeStudent(row.original.userId)}>Remove</Button></td> : null}
-            </tr>
-          ))}</tbody>
-        </table>
+      {selectedStudent ? (
+        <section ref={studentDetailsRef} className="mt-6 scroll-mt-4 rounded-3xl border border-pitch/20 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="selected-student-heading">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-fairway">Student details</p>
+              <h2 id="selected-student-heading" className="mt-1 text-2xl font-bold text-pitch">{selectedStudent.name}</h2>
+              <p className="mt-1 text-sm text-ink/70">Registration: {selectedStudent.registrationId || "—"}</p>
+            </div>
+            <Button variant="ghost" onClick={() => setSelectedStudentId("")}>Close details</Button>
+          </div>
+          <dl className="my-5 grid gap-x-6 gap-y-4 rounded-2xl bg-cream/50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div><dt className="font-semibold text-ink/60">Email</dt><dd className="break-all">{selectedStudent.email || "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Phone</dt><dd>{selectedStudent.phone || "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Date of birth</dt><dd>{selectedStudent.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString() : "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Gender</dt><dd>{selectedStudent.gender || "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Program</dt><dd>{selectedStudent.program?.name || "—"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Batch</dt><dd>{selectedStudent.batch?.name || "Not assigned"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Address</dt><dd className="break-words">{selectedStudent.address || "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Guardian</dt><dd>{selectedStudent.guardianName || "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Guardian phone</dt><dd>{selectedStudent.guardianPhone || "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Guardian email</dt><dd className="break-all">{selectedStudent.guardianEmail || "Not provided"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Account status</dt><dd>{selectedStudent.status || "—"}</dd></div>
+            <div><dt className="font-semibold text-ink/60">Admission status</dt><dd>{selectedStudent.admissionStatus || "—"}</dd></div>
+          </dl>
+          <StudentContactActions student={selectedStudent} />
+        </section>
+      ) : null}
+      <div className="mt-6 space-y-3">
+        {rows.map((student) => (
+          <article key={student.userId} className={`grid gap-3 rounded-2xl border p-4 sm:grid-cols-[1fr_auto] sm:items-center ${student.userId === selectedStudentId ? "border-pitch bg-cream/30" : "border-line bg-paper"}`}>
+            {admin ? (
+              <button type="button" aria-pressed={student.userId === selectedStudentId} onClick={() => setSelectedStudentId(student.userId)} className="min-w-0 rounded-xl p-1 text-left transition hover:bg-cream/70">
+                <span className="block text-lg font-semibold text-pitch">{student.name}</span>
+                <span className="mt-1 block break-all text-sm text-ink/70">{student.email || "No email provided"}</span>
+                <span className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink/70">
+                  <span>Registration: {student.registrationId || "—"}</span>
+                  <span>Program: {student.program?.name || "—"}</span>
+                  <span>Batch: {student.batch?.name || "Not assigned"}</span>
+                  <span>Status: {student.status || "—"}</span>
+                </span>
+                <span className="mt-2 block text-sm font-semibold text-fairway">{student.userId === selectedStudentId ? "Details shown above" : "View student details"}</span>
+              </button>
+            ) : (
+              <div className="min-w-0 p-1">
+                <p className="text-lg font-semibold text-pitch">{student.name}</p>
+                <p className="mt-1 break-all text-sm text-ink/70">{student.email || "No email provided"}</p>
+                <p className="mt-3 text-sm text-ink/70">Registration: {student.registrationId || "—"} · Program: {student.program?.name || "—"} · Batch: {student.batch?.name || "Not assigned"}</p>
+              </div>
+            )}
+            {admin ? <Button variant="danger" onClick={() => removeStudent(student.userId)}>Remove</Button> : null}
+          </article>
+        ))}
       </div>
       {!rows.length && !students.isLoading ? <div className="mt-6"><Empty title="No players" body="Approved players appear after admission or an office entry." /></div> : null}
       {admin && students.data?.meta ? <div className="mt-4 flex items-center justify-between text-sm"><span>{students.data.meta.total} players · page {page}</span><div className="flex gap-2"><Button variant="ghost" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button variant="ghost" disabled={page * students.data.meta.limit >= students.data.meta.total} onClick={() => setPage((value) => value + 1)}>Next</Button></div></div> : null}
@@ -446,6 +498,210 @@ export function ContentPage() {
           <Button type="submit">Save page</Button>
         </form>
       ) : pages.isLoading ? <Spinner /> : null}
+    </section>
+  );
+}
+
+export function BannersAdminPage() {
+  const queryClient = useQueryClient();
+  const banners = useQuery({
+    queryKey: ["banners-manage"],
+    queryFn: () => api.get("/banners/manage"),
+    staleTime: 15_000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+  const [editing, setEditing] = useState(null);
+  const [file, setFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const saveBanner = useMutation({
+    mutationFn: ({ id, payload }) => id ? api.patch(`/banners/${id}`, payload) : api.post("/banners", payload),
+    onSuccess: async (_result, variables) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["banners-manage"] }),
+        queryClient.invalidateQueries({ queryKey: ["banners"] }),
+      ]);
+      setSuccessMessage(variables.id ? "Banner changes saved." : "Banner published on the homepage.");
+      setEditing(null);
+      setFile(null);
+      setFormError(null);
+    },
+  });
+
+  const deleteBanner = useMutation({
+    mutationFn: (id) => api.del(`/banners/${id}`),
+    onSuccess: async (_result, id) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["banners-manage"] }),
+        queryClient.invalidateQueries({ queryKey: ["banners"] }),
+      ]);
+      if (editing?.id === id) {
+        setEditing(null);
+        setFile(null);
+      }
+      setSuccessMessage("Banner deleted.");
+      setFormError(null);
+    },
+  });
+
+  async function save(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fields = Object.fromEntries(new FormData(form).entries());
+    setFormError(null);
+    setSuccessMessage("");
+    saveBanner.reset();
+    deleteBanner.reset();
+    if (!editing && !file) {
+      setFormError({ message: "Choose a player photo before publishing the banner." });
+      return;
+    }
+    if (!fields.caption?.trim()) {
+      setFormError({ message: "Add a caption for this player photo." });
+      return;
+    }
+    if (!fields.playerName?.trim()) {
+      setFormError({ message: "Enter the player's name." });
+      return;
+    }
+
+    setUploading(Boolean(file));
+    setUploadProgress(file ? 0 : null);
+    try {
+      let imageUrl = editing?.imageUrl || "";
+      let publicId = editing?.publicId || "";
+      if (file) {
+        const uploaded = await api.upload("banners", file, setUploadProgress);
+        imageUrl = uploaded.url;
+        publicId = uploaded.publicId;
+      }
+      const parsed = bannerSchema.safeParse({
+        ...fields,
+        imageUrl,
+        publicId,
+        sortOrder: Number(fields.sortOrder || 0),
+        published: fields.published === "on",
+      });
+      if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        const messages = {
+          imageUrl: "Choose a valid player photo to upload.",
+          caption: "Caption must be 2 to 200 characters.",
+          playerName: "Player name must be 2 to 80 characters.",
+          tag: "Tag must be 48 characters or fewer.",
+          country: "Country must be 80 characters or fewer.",
+          teamName: "Team name must be 100 characters or fewer.",
+          sortOrder: "Display order must be a whole number from 0 to 9999.",
+        };
+        setFormError({ message: messages[issue?.path?.[0]] || "Check the banner details and try again." });
+        return;
+      }
+      await saveBanner.mutateAsync({ id: editing?.id, payload: parsed.data });
+      form.reset();
+    } catch (err) {
+      setFormError({ message: bannerErrorMessage(err, editing ? "save banner changes" : "publish this banner") });
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
+  }
+
+  function edit(item) {
+    setEditing(item);
+    setFile(null);
+    setFormError(null);
+    setSuccessMessage("");
+    saveBanner.reset();
+    deleteBanner.reset();
+  }
+
+  function remove(item) {
+    if (!window.confirm(`Delete the banner for ${item.playerName}?`)) return;
+    setSuccessMessage("");
+    setFormError(null);
+    saveBanner.reset();
+    deleteBanner.mutate(item.id);
+  }
+
+  const saving = uploading || saveBanner.isPending;
+
+  return (
+    <section>
+      <PageTitle title="Home banners" />
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-fairway">Website sections</p>
+          <h1 className="mt-1 font-serif text-4xl text-pitch">Home banners</h1>
+        </div>
+        <p className="text-sm text-ink/60">Manage the player spotlights shown to everyone on the homepage.</p>
+      </div>
+
+      {successMessage ? <p className="mt-4 rounded-xl border border-fairway/20 bg-fairway/5 px-4 py-3 text-sm text-fairway" role="status">{successMessage}</p> : null}
+      {banners.isError ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2" role="alert">
+          <ErrorNote error={{ message: bannerErrorMessage(banners.error, banners.data ? "refresh homepage banners" : "load homepage banners") }} />
+          <Button variant="ghost" onClick={() => banners.refetch()}>Retry</Button>
+        </div>
+      ) : null}
+      {deleteBanner.isError ? <div className="mt-4"><ErrorNote error={{ message: bannerErrorMessage(deleteBanner.error, "delete this banner") }} /></div> : null}
+
+      {!editing && (banners.data?.length || 0) >= 5 ? (
+        <div className="mt-6 rounded-3xl border border-gold/30 bg-gold/10 p-5 text-sm text-pitch">
+          Five banners is the homepage limit. Delete one of the current banners to add another.
+        </div>
+      ) : (
+      <form key={editing?.id || "new-banner"} className="mt-6 grid gap-4 rounded-3xl border border-line bg-paper p-5 shadow-sm sm:p-7 lg:grid-cols-2" onSubmit={save}>
+        <div className="lg:col-span-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-serif text-2xl text-pitch">{editing ? "Edit banner" : "Add a player banner"}</h2>
+          {editing ? <Button variant="ghost" onClick={() => { setEditing(null); setFile(null); setFormError(null); }}>Cancel edit</Button> : null}
+        </div>
+        <div className="lg:col-span-2">
+          <ImagePicker label={saving ? "Uploading photo…" : editing ? "Replace player photo" : "Choose player photo"} name="file" file={file} onFileChange={setFile} currentUrl={editing?.imageUrl || ""} disabled={saving} uploadProgress={uploadProgress} />
+        </div>
+        <Field label="Caption"><input className={inputClass} name="caption" maxLength={200} required defaultValue={editing?.caption || ""} placeholder="A short story about this moment" /></Field>
+        <Field label="Player name"><input className={inputClass} name="playerName" maxLength={80} required defaultValue={editing?.playerName || ""} placeholder="Player name" /></Field>
+        <Field label="Tag"><input className={inputClass} name="tag" maxLength={48} defaultValue={editing?.tag || ""} placeholder="e.g. Player spotlight" /></Field>
+        <Field label="Country"><input className={inputClass} name="country" maxLength={80} defaultValue={editing?.country || ""} placeholder="Country" /></Field>
+        <Field label="Team name"><input className={inputClass} name="teamName" maxLength={100} defaultValue={editing?.teamName || ""} placeholder="Club or team" /></Field>
+        <Field label="Display order"><input className={inputClass} name="sortOrder" type="number" min="0" max="9999" defaultValue={editing?.sortOrder ?? 0} /></Field>
+        <label className="flex items-center gap-2 text-sm text-ink"><input name="published" type="checkbox" defaultChecked={editing?.published ?? true} /> Visible on the public homepage</label>
+        <div className="flex items-center gap-3 lg:col-span-2">
+          <Button type="submit" disabled={saving}>{saving ? "Saving banner…" : editing ? "Save changes" : "Publish banner"}</Button>
+          {formError ? <ErrorNote error={formError} /> : null}
+        </div>
+      </form>
+      )}
+
+      <div className="mt-8 flex items-center justify-between gap-3">
+        <h2 className="font-serif text-2xl text-pitch">All banners</h2>
+        <span className="rounded-full border border-line bg-paper px-3 py-1 text-xs text-ink/65">{banners.data?.length || 0} total</span>
+      </div>
+      {banners.isLoading ? <div className="mt-5"><Spinner /></div> : null}
+      {!banners.isLoading && !banners.isError && !banners.data?.length ? <div className="mt-5"><Empty title="No player banners yet" body="Add a player photo above to feature it on the homepage." /></div> : null}
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {(banners.data || []).map((item) => (
+          <article key={item.id} className="group overflow-hidden rounded-3xl border border-line bg-paper shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            <div className="relative aspect-[4/3] overflow-hidden bg-pitch/5">
+              <img src={imageUrl(item.imageUrl, 720)} alt={`${item.playerName} — ${item.caption}`} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold backdrop-blur ${item.published ? "bg-fairway/90 text-white" : "bg-pitch/80 text-cream"}`}>{item.published ? "Live" : "Draft"}</span>
+              {item.tag ? <span className="absolute bottom-3 left-3 rounded-full border border-white/30 bg-pitch/75 px-3 py-1 text-xs font-medium text-white backdrop-blur">{item.tag}</span> : null}
+            </div>
+            <div className="p-4">
+              <h3 className="font-serif text-xl text-pitch">{item.playerName}</h3>
+              <p className="mt-1 line-clamp-2 text-sm text-ink/70">{item.caption}</p>
+              <p className="mt-2 text-xs text-ink/55">{[item.teamName, item.country].filter(Boolean).join(" · ") || "No team or country set"}</p>
+              <div className="mt-4 flex gap-2 border-t border-line pt-3">
+                <Button variant="ghost" className="flex-1 border border-line" onClick={() => edit(item)}>Edit</Button>
+                <Button variant="danger" className="flex-1" disabled={deleteBanner.isPending} onClick={() => remove(item)}>{deleteBanner.isPending ? "Deleting…" : "Delete"}</Button>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
     </section>
   );
 }

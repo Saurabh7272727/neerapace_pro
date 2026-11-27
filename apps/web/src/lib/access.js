@@ -21,6 +21,7 @@ export function linksFor(role) {
       announcements,
       { to: "/app/enquiries", label: "Enquiries" },
       { to: "/app/content", label: "Website" },
+      { to: "/app/banners", label: "Home banners" },
       { to: "/app/gallery", label: "Gallery" },
       messages,
       notifications,

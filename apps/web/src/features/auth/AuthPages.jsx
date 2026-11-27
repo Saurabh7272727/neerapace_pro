@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { forgotSchema, loginSchema, registerSchema, resetSchema, verifyOtpSchema } from "@neerapace/shared";
 import { Button, ErrorNote, Field, PageTitle, inputClass } from "../../components/ui.jsx";
@@ -101,6 +101,10 @@ export function RegisterPage() {
   const [error, setError] = useState(null);
   const [done, setDone] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const confirmationRef = useRef(null);
+  useEffect(() => {
+    if (done) confirmationRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [done]);
   async function onSubmit(event) {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
@@ -130,12 +134,12 @@ export function RegisterPage() {
         sideTitle="A strong start to your cricket journey."
         sideText="One quick step remains: confirm your email so the academy team can review your application."
       >
-        <div className="rounded-3xl border border-line bg-white p-5 sm:p-7">
+        <div ref={confirmationRef} className="rounded-3xl border border-line bg-white p-5 sm:p-7">
           <div className="flex items-start gap-4">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-fairway/10 text-2xl font-semibold text-fairway" aria-hidden="true">✓</span>
             <div>
               <p className="font-semibold text-pitch">Check your inbox</p>
-              <p className="mt-1 text-sm leading-6 text-ink/70">We sent a confirmation code to <strong className="break-all">{done.email}</strong>. Verify the address before the office reviews your application.</p>
+              <p className="mt-1 text-sm leading-6 text-ink/70">We sent a 6-digit verification code to <strong className="break-all">{done.email}</strong>. Enter it to verify your email before the office reviews your application.</p>
             </div>
           </div>
           <div className="mt-6 grid gap-3 border-t border-line pt-5 sm:grid-cols-3">
@@ -147,7 +151,7 @@ export function RegisterPage() {
             ))}
           </div>
           <Link className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-pitch px-5 py-3 text-sm font-semibold text-cream transition hover:bg-pitch-dark" to={`/verify?email=${encodeURIComponent(done.email)}`}>
-            Verify email address
+            Enter verification code
           </Link>
         </div>
         <p className="mt-5 text-center text-sm text-ink/65">Already confirmed? <Link className="font-medium text-fairway" to="/login">Sign in</Link></p>

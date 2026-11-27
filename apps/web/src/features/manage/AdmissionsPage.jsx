@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Badge, Button, Empty, ErrorNote, PageTitle, Spinner, inputClass } from "../../components/ui.jsx";
 import { api } from "../../lib/api.js";
+import { StudentContactActions } from "./StudentContactActions.jsx";
 
 export function AdmissionsPage() {
   const queryClient = useQueryClient();
@@ -67,9 +68,19 @@ export function AdmissionsPage() {
               <Badge>{student.admissionStatus}</Badge>
               <Badge tone="gold">{student.registrationId}</Badge>
             </div>
-            <p className="mt-2 text-sm">{student.email} · {student.phone}</p>
-            <p className="text-sm text-ink/70">Guardian {student.guardianName} · {student.guardianPhone}</p>
-            <p className="text-sm">Program: {student.program?.name || "—"} · Account: {student.status}</p>
+            <dl className="mt-4 grid gap-x-6 gap-y-3 rounded-2xl bg-white/70 p-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              <div><dt className="font-semibold text-ink/60">Email</dt><dd className="break-all">{student.email || "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Phone</dt><dd>{student.phone || "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Date of birth</dt><dd>{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Gender</dt><dd>{student.gender || "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Home address</dt><dd className="break-words">{student.address || "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Program</dt><dd>{student.program?.name || "—"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Guardian</dt><dd>{student.guardianName || "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Guardian phone</dt><dd>{student.guardianPhone || "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Guardian email</dt><dd className="break-all">{student.guardianEmail || "Not provided"}</dd></div>
+              <div><dt className="font-semibold text-ink/60">Account status</dt><dd>{student.status || "—"}</dd></div>
+            </dl>
+            <div className="mt-4"><StudentContactActions student={student} /></div>
             {student.reviewNote ? <p className="mt-2 text-sm">{student.reviewNote}</p> : null}
             {student.status === "pending_email" ? (
               <p className="mt-3 rounded-xl bg-gold/15 px-3 py-2 text-sm text-pitch">Waiting for the applicant to verify their email. Approval is available after verification.</p>

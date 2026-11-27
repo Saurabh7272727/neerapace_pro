@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-
+import { useNavigate } from 'react-router-dom';
+import { ProgramsPage } from '../features/public/PublicPages.jsx';
 /**
  * Self-contained Inline SVG Icon Set
  * Zero external dependencies so browser preview & builds never fail on missing icon exports.
@@ -325,6 +326,7 @@ export default function App() {
     const [demoPass, setDemoPass] = useState('');
     const [loginMessage, setLoginMessage] = useState('');
 
+    const navi = useNavigate();
     // Media Preview Modal (Instagram Reels & YouTube Breakdown)
     const [selectedVideo, setSelectedVideo] = useState(null);
 
@@ -674,66 +676,9 @@ export default function App() {
                             the batch best suited to their age and current skill level.
                         </p>
                     </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
-                        {BATCH_PROGRAMS.map((batch) => (
-                            <div
-                                key={batch.id}
-                                className={`rounded-2xl p-6 sm:p-8 flex flex-col justify-between bg-[#111827] border ${batch.popular ? 'border-[#059669]' : 'border-[#1F2937]'
-                                    }`}
-                            >
-                                <div>
-                                    <div className="flex items-center justify-between gap-2 mb-4">
-                                        <span className="text-xs font-semibold uppercase tracking-wider text-[#94A3B8]">
-                                            Academy Program
-                                        </span>
-                                        {batch.popular && (
-                                            <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#D97706]/15 text-[#F59E0B] border border-[#D97706]/30">
-                                                Most Popular
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <h3 className="text-xl font-bold text-[#F8FAFC]">{batch.name}</h3>
-                                    <p className="text-sm text-[#94A3B8] mt-1.5 leading-relaxed">{batch.subtitle}</p>
-
-                                    {/* Timings & Net Facility Details */}
-                                    <div className="mt-6 pt-5 border-t border-[#1F2937] space-y-3 text-xs sm:text-sm text-[#CBD5E1]">
-                                        <div className="flex items-start gap-2.5">
-                                            <Icons.Clock className="w-4 h-4 mt-0.5 text-[#F59E0B] shrink-0" />
-                                            <span>{batch.timings}</span>
-                                        </div>
-                                        <div className="flex items-start gap-2.5">
-                                            <Icons.Shield className="w-4 h-4 mt-0.5 text-[#10B981] shrink-0" />
-                                            <span>{batch.facilities}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Bullet Highlights */}
-                                    <ul className="mt-6 space-y-2.5">
-                                        {batch.features.map((feat) => (
-                                            <li key={feat} className="flex items-start gap-2.5 text-sm text-[#CBD5E1]">
-                                                <Icons.Check className="w-4 h-4 mt-0.5 text-[#10B981] shrink-0" />
-                                                <span>{feat}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => handleChooseBatch(batch.name)}
-                                    className={`mt-8 w-full py-3 px-4 rounded-lg text-sm font-semibold transition-colors ${batch.popular
-                                        ? 'bg-[#059669] hover:bg-[#10B981] text-white'
-                                        : 'bg-[#0B1120] hover:bg-[#1F2937] text-[#F8FAFC] border border-[#1F2937]'
-                                        }`}
-                                >
-                                    Book Trial for This Batch
-                                </button>
-                            </div>
-                        ))}
-                    </div>
                 </div>
+
+                <ProgramsPage />
             </section>
 
             {/* =====================================================================
@@ -1001,221 +946,113 @@ export default function App() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
                         {/* Left: Interactive Lead Form */}
-                        <div className="lg:col-span-7 bg-[#111827] border border-[#1F2937] rounded-2xl p-6 sm:p-8">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-[#10B981]">
-                                Complimentary Net Assessment
-                            </p>
-                            <h2 className="text-2xl sm:text-3xl font-bold text-[#F8FAFC] mt-2">
-                                Book Your Free Net Trial
-                            </h2>
-                            <p className="text-sm text-[#94A3B8] mt-2">
-                                Select your age group, primary role, and preferred batch. Our coaching desk will
-                                confirm your turf net slot on WhatsApp.
-                            </p>
-
-                            {confirmedTrial ? (
-                                <div className="mt-6 bg-[#0B1120] border border-[#059669] rounded-xl p-6">
-                                    <div className="flex items-start gap-3">
-                                        <span className="w-7 h-7 rounded-full bg-[#059669]/20 text-[#10B981] flex items-center justify-center shrink-0 mt-0.5">
-                                            <Icons.Check className="w-4 h-4" />
-                                        </span>
-                                        <div>
-                                            <h3 className="text-lg font-bold text-[#F8FAFC]">
-                                                Free Trial Slot Reserved
-                                            </h3>
-                                            <p className="text-sm text-[#94A3B8] mt-1">
-                                                Thank you,{' '}
-                                                <span className="font-semibold text-[#F8FAFC]">
-                                                    {confirmedTrial.studentName}
-                                                </span>
-                                                . Review your trial registration summary below.
-                                            </p>
-                                        </div>
+                        <div className="order-2 min-w-0 text-white space-y-5 lg:order-1 lg:col-span-5">
+                            <div className="rounded-3xl border border-line bg-paper p-6 transition-colors hover:border-pitch/35">
+                                <div className="flex items-start gap-4">
+                                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-line bg-pitch/5 font-serif text-base font-bold text-pitch">
+                                        AS
                                     </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-pitch/75">
+                                            Head Coach &amp; Trials Desk
+                                        </p>
+                                        <h2 className="mt-1 font-serif text-xl text-ink">
+                                            Abhimanyu Singh
+                                        </h2>
+                                        <p className="mt-0.5 text-xs text-ink/65">
+                                            Founder &amp; Head Pace Coach • Batch Trials &amp; Assessments
+                                        </p>
 
-                                    <dl className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-[#111827] border border-[#1F2937] rounded-lg p-4 text-sm">
-                                        <div>
-                                            <dt className="text-xs text-[#94A3B8]">Student Name</dt>
-                                            <dd className="font-semibold text-[#F8FAFC] mt-0.5">
-                                                {confirmedTrial.studentName}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-xs text-[#94A3B8]">Age Group</dt>
-                                            <dd className="font-semibold text-[#F8FAFC] mt-0.5">
-                                                {confirmedTrial.ageGroup}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-xs text-[#94A3B8]">Cricket Role</dt>
-                                            <dd className="font-semibold text-[#F8FAFC] mt-0.5">{confirmedTrial.role}</dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-xs text-[#94A3B8]">Selected Batch</dt>
-                                            <dd className="font-semibold text-[#10B981] mt-0.5">
-                                                {confirmedTrial.batch}
-                                            </dd>
-                                        </div>
-                                        <div className="sm:col-span-2">
-                                            <dt className="text-xs text-[#94A3B8]">WhatsApp Contact</dt>
-                                            <dd className="font-semibold text-[#F8FAFC] mt-0.5">
-                                                {confirmedTrial.whatsapp}
-                                            </dd>
-                                        </div>
-                                    </dl>
+                                        <div className="mt-4 space-y-2.5 border-t border-line pt-3.5 text-sm">
+                                            <a
+                                                href="tel:+919876543210"
+                                                className="flex min-w-0 items-center gap-2.5 text-ink/85 transition-colors hover:text-pitch"
+                                            >
+                                                <svg className="h-4 w-4 shrink-0 text-pitch" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                                </svg>
+                                                <span className="min-w-0 break-words">+91 7011693617 (Office &amp; WhatsApp)</span>
+                                            </a>
 
-                                    <div className="mt-5 flex flex-col sm:flex-row gap-3">
-                                        <a
-                                            href={`https://wa.me/919876543210?text=${encodeURIComponent(
-                                                `Hello NeeraPace Cricket Academy, I booked a Free Net Trial.\nStudent: ${confirmedTrial.studentName}\nAge Group: ${confirmedTrial.ageGroup}\nRole: ${confirmedTrial.role}\nBatch: ${confirmedTrial.batch}\nWhatsApp: ${confirmedTrial.whatsapp}`
-                                            )}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg text-sm font-semibold text-white bg-[#059669] hover:bg-[#10B981] transition-colors"
-                                        >
-                                            <Icons.WhatsApp className="w-4 h-4" />
-                                            <span>Send Confirmation on WhatsApp</span>
-                                        </a>
-                                        <button
-                                            type="button"
-                                            onClick={() => setConfirmedTrial(null)}
-                                            className="inline-flex items-center justify-center px-5 py-3 rounded-lg text-sm font-medium text-[#CBD5E1] bg-[#111827] hover:bg-[#1F2937] border border-[#1F2937] transition-colors"
-                                        >
-                                            Edit Details
-                                        </button>
+                                            <a
+                                                href="mailto:office@neerapace.in"
+                                                className="flex min-w-0 items-center gap-2.5 text-ink/85 transition-colors hover:text-pitch"
+                                            >
+                                                <svg className="h-4 w-4 shrink-0 text-pitch" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                                <span className="min-w-0 break-words">neerapacefoundationacademy@gmail.com</span>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                            ) : (
-                                <form onSubmit={handleSubmitTrial} className="mt-6 space-y-5" noValidate>
-                                    {formError && (
-                                        <div className="p-3.5 rounded-lg bg-[#D97706]/15 border border-[#D97706]/40 text-[#F59E0B] text-sm">
-                                            {formError}
-                                        </div>
-                                    )}
-
-                                    {/* Student Name */}
-                                    <div>
-                                        <label
-                                            htmlFor="np-student-name"
-                                            className="block text-sm font-medium text-[#CBD5E1] mb-1.5"
-                                        >
-                                            Student Name
-                                        </label>
-                                        <input
-                                            id="np-student-name"
-                                            type="text"
-                                            placeholder="Enter player's full name"
-                                            value={trialForm.studentName}
-                                            onChange={(e) =>
-                                                setTrialForm((prev) => ({ ...prev, studentName: e.target.value }))
-                                            }
-                                            className="w-full px-4 py-2.5 rounded-lg bg-[#0B1120] border border-[#1F2937] text-[#F8FAFC] placeholder-[#64748B] text-sm focus:outline-none focus:border-[#10B981]"
-                                        />
+                            </div>
+                            <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-2">
+                                {/* Instagram */}
+                                <a
+                                    href="https://www.instagram.com/neera_pace_foundation_academy/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2.5 rounded-2xl border border-line px-3.5 py-2.5 text-xs font-semibold text-ink transition-all hover:border-pitch hover:bg-pitch/5"
+                                >
+                                    <svg className="h-4 w-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                                        <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
+                                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                                    </svg>
+                                    <div className="min-w-0">
+                                        <div className="truncate text-white">Instagram</div>
+                                        <div className="text-[11px] font-normal text-white/60">220K+ Followers</div>
                                     </div>
+                                </a>
 
-                                    {/* Age Group & Selected Batch */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label
-                                                htmlFor="np-age-group"
-                                                className="block text-sm font-medium text-[#CBD5E1] mb-1.5"
-                                            >
-                                                Age Group
-                                            </label>
-                                            <select
-                                                id="np-age-group"
-                                                value={trialForm.ageGroup}
-                                                onChange={(e) =>
-                                                    setTrialForm((prev) => ({ ...prev, ageGroup: e.target.value }))
-                                                }
-                                                className="w-full px-4 py-2.5 rounded-lg bg-[#0B1120] border border-[#1F2937] text-[#F8FAFC] text-sm focus:outline-none focus:border-[#10B981]"
-                                            >
-                                                {['U-12', 'U-14', 'U-16', 'U-19', 'Senior / Open'].map((group) => (
-                                                    <option key={group} value={group}>
-                                                        {group}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label
-                                                htmlFor="np-selected-batch"
-                                                className="block text-sm font-medium text-[#CBD5E1] mb-1.5"
-                                            >
-                                                Selected Batch
-                                            </label>
-                                            <select
-                                                id="np-selected-batch"
-                                                value={trialForm.batch}
-                                                onChange={(e) =>
-                                                    setTrialForm((prev) => ({ ...prev, batch: e.target.value }))
-                                                }
-                                                className="w-full px-4 py-2.5 rounded-lg bg-[#0B1120] border border-[#1F2937] text-[#F8FAFC] text-sm focus:outline-none focus:border-[#10B981]"
-                                            >
-                                                {BATCH_PROGRAMS.map((b) => (
-                                                    <option key={b.id} value={b.name}>
-                                                        {b.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                {/* YouTube */}
+                                <a
+                                    href="https://youtube.com/@neerapacefoundation815?si=ydygLYs-A7H717H0"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2.5 rounded-2xl border border-line px-3.5 py-2.5 text-xs font-semibold text-ink transition-all hover:border-pitch hover:bg-pitch/5"
+                                >
+                                    <svg className="h-4 w-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <div className="min-w-0">
+                                        <div className="truncate text-white">YouTube</div>
+                                        <div className="text-[11px] font-normal text-white/60">12K+ Subscribers</div>
                                     </div>
+                                </a>
 
-                                    {/* Cricket Role Selector Pills */}
-                                    <div>
-                                        <span className="block text-sm font-medium text-[#CBD5E1] mb-2">
-                                            Cricket Role
-                                        </span>
-                                        <div className="grid grid-cols-3 gap-2.5">
-                                            {['Batter', 'Bowler', 'All-Rounder'].map((roleOption) => {
-                                                const active = trialForm.role === roleOption;
-                                                return (
-                                                    <button
-                                                        key={roleOption}
-                                                        type="button"
-                                                        onClick={() => setTrialForm((prev) => ({ ...prev, role: roleOption }))}
-                                                        className={`py-2.5 px-1.5 sm:px-3 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${active
-                                                            ? 'bg-[#059669] text-white border-[#059669]'
-                                                            : 'bg-[#0B1120] text-[#CBD5E1] border-[#1F2937] hover:text-white'
-                                                            }`}
-                                                    >
-                                                        {roleOption}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                                {/* WhatsApp */}
+                                <a
+                                    href="https://wa.me/7011693617"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2.5 rounded-2xl border border-line px-3.5 py-2.5 text-xs font-semibold text-ink transition-all hover:border-pitch hover:bg-pitch/5"
+                                >
+                                    <svg className="h-4 w-4 shrink-0 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    <div className="min-w-0">
+                                        <div className="truncate text-white">WhatsApp</div>
+                                        <div className="text-[11px] font-normal text-white/60">Quick Chat</div>
                                     </div>
+                                </a>
 
-                                    {/* WhatsApp Number */}
-                                    <div>
-                                        <label
-                                            htmlFor="np-whatsapp"
-                                            className="block text-sm font-medium text-[#CBD5E1] mb-1.5"
-                                        >
-                                            WhatsApp Number
-                                        </label>
-                                        <input
-                                            id="np-whatsapp"
-                                            type="tel"
-                                            placeholder="e.g., 98765 43210"
-                                            value={trialForm.whatsapp}
-                                            onChange={(e) =>
-                                                setTrialForm((prev) => ({ ...prev, whatsapp: e.target.value }))
-                                            }
-                                            className="w-full px-4 py-2.5 rounded-lg bg-[#0B1120] border border-[#1F2937] text-[#F8FAFC] placeholder-[#64748B] text-sm focus:outline-none focus:border-[#10B981]"
-                                        />
-                                    </div>
+                            </div>
 
-                                    <button
-                                        type="submit"
-                                        className="w-full py-3.5 px-6 rounded-lg text-sm sm:text-base font-semibold text-white bg-[#059669] hover:bg-[#10B981] transition-colors"
-                                    >
-                                        Reserve Free Net Trial
-                                    </button>
-                                </form>
-                            )}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => navi('/contact')}
+                                    className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm sm:text-base font-semibold text-white bg-[#059669] hover:bg-[#10B981] rounded-lg transition-colors"
+                                >
+                                    <span>Click for Enquiry </span>
+                                    <Icons.ArrowRight className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
+
 
                         {/* Right: Ground Timings & Facilities Card */}
                         <div className="lg:col-span-5 space-y-6">

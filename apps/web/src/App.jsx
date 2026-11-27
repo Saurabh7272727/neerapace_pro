@@ -7,7 +7,7 @@ import { PageTitle } from "./components/ui.jsx";
 import { ForgotPage, LoginPage, RegisterPage, ResetPage, VerifyPage } from "./features/auth/AuthPages.jsx";
 import { ChatPage } from "./features/chat/ChatPage.jsx";
 import { AdminDashboard, CoachDashboard, StudentDashboard } from "./features/dashboard/Dashboards.jsx";
-import { AnnouncementsPage, AttendancePage, BatchesPage, CoachesAdminPage, ContentPage, EnquiriesPage, GalleryAdminPage, ProgramsAdminPage, StudentsPage } from "./features/manage/OfficePages.jsx";
+import { AnnouncementsPage, AttendancePage, BannersAdminPage, BatchesPage, CoachesAdminPage, ContentPage, EnquiriesPage, GalleryAdminPage, ProgramsAdminPage, StudentsPage } from "./features/manage/OfficePages.jsx";
 import { AdmissionsPage } from "./features/manage/AdmissionsPage.jsx";
 import { NotificationsPage } from "./features/notifications/NotificationsPage.jsx";
 import { ProfilePage } from "./features/profile/ProfilePage.jsx";
@@ -50,6 +50,7 @@ export function App() {
               <Route path="app/programs" element={<ProgramsAdminPage />} />
               <Route path="app/enquiries" element={<EnquiriesPage />} />
               <Route path="app/content" element={<ContentPage />} />
+              <Route path="app/banners" element={<BannersAdminPage />} />
               <Route path="app/gallery" element={<GalleryAdminPage />} />
             </Route>
             <Route element={<RequireAuth roles={["coach"]} />}>

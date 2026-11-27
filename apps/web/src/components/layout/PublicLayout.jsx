@@ -34,7 +34,7 @@ export function PublicLayout() {
           <Link to="/" className="flex shrink-0 items-center rounded-xl md:bg-pitch md:px-2 md:py-1">
             <picture>
               <source media="(min-width: 768px)" srcSet="/desktopView.svg" />
-              <img src="/mobileView.svg" alt="Neera Pace Cricket Academy" className="h-11 w-11 object-contain md:h-[42px] md:w-[190px] lg:h-[49px] lg:w-[220px]" />
+              <img src="/mobileView.svg" alt="Neera Pace Cricket Academy" className="h-11 w-11 object-contain md:h-[42px] md:w-[205px] lg:h-[49px] lg:w-[235px]" />
             </picture>
           </Link>
           <nav className="hidden items-center gap-4 text-sm md:flex lg:gap-7">
@@ -91,14 +91,11 @@ export function PublicLayout() {
           <div className="grid grid-cols-2 gap-x-6 gap-y-8 border-b border-cream/15 pb-8 sm:gap-x-8 sm:gap-y-10 sm:pb-10 lg:grid-cols-[1.4fr_.8fr_.8fr_1.2fr]">
             <div className="col-span-2 min-w-0 lg:col-span-1">
               <Link to="/" className="inline-flex max-w-full items-center rounded-xl">
-                <picture>
-                  <source media="(min-width: 768px)" srcSet="/desktopView.svg" />
-                  <img
-                    src="/mobileView.svg"
-                    alt="Neera Pace Cricket Academy"
-                    className="h-12 w-12 object-contain md:h-[58px] md:w-[262px] lg:h-[62px] lg:w-[280px]"
-                  />
-                </picture>
+                <img
+                  src="/desktopView.svg"
+                  alt="Neera Pace Cricket Academy"
+                  className="h-auto w-[210px] max-w-full object-contain sm:w-[240px] lg:w-[280px]"
+                />
               </Link>
               <p className="mt-4 max-w-sm text-sm leading-6 text-cream/65">A place to learn the craft, enjoy the game and grow with your squad.</p>
             </div>

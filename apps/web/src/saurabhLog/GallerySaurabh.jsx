@@ -9,52 +9,14 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
  */
 const PRIMARY_SQUAD_PHOTO = {
     id: 'squad-master-2026',
-    title: 'NeeraPace Official Squad & Coaching Staff',
-    subtitle: '2026 High-Performance Training Camp • Main Center Turf Ground',
-    category: 'Squad & Staff',
-    date: 'Season 2026',
-    telemetry: 'FULL SQUAD • 20 MEMBERS',
+    title: 'SRF team',
+    subtitle: '2026 High-Performance Cricket Team',
+    category: 'Cricket Team',
+    date: 'Season 2018',
+    telemetry: 'FULL TEAM • 11 MEMBERS',
     location: 'Main Center Turf',
     filename: 'neerapace-official-squad-2026.webp',
     src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795719044/IMG_9959.jpg',
-    hotspots: [
-        {
-            id: 'pin-coach',
-            x: 0,
-            y: 0,
-            badge: 'Head Coach',
-            name: 'Abhimanyu Singh',
-            role: 'Founder & Chief Mentor',
-            note: 'Seam bowling biomechanics, wrist alignment & match temperament lead.',
-        },
-        {
-            id: 'pin-pace',
-            x: 0,
-            y: 0,
-            badge: 'Pace Unit',
-            name: 'Pace Bowling Unit',
-            role: '130–140+ KMPH Wing',
-            note: 'Morning new-ball swing & death-over blockhole yorker specialists.',
-        },
-        {
-            id: 'pin-batters',
-            x: 0,
-            y: 0,
-            badge: 'Top Order',
-            name: 'Top-Order Batting',
-            role: 'U-19 & Senior Core',
-            note: 'High-volume turf net & spin-footwork strike rotation unit.',
-        },
-        {
-            id: 'pin-conditioning',
-            x: 0,
-            y: 0,
-            badge: 'S&C Staff',
-            name: 'Strength & Conditioning',
-            role: 'Athletic Performance',
-            note: 'Sprint agility, throwing accuracy & injury-prevention unit.',
-        },
-    ],
 };
 
 /**
@@ -68,44 +30,44 @@ const INITIAL_GALLERY_ITEMS = [
     {
         id: 'moment-01',
         title: 'Emerging Player of the tournament',
-        category: 'Janakpur Bolts',
+        category: 'Match Days',
         date: 'Nov 2026',
         telemetry: 'BAJAJ Pulsar',
-        location: 'Rahul Yadav',
+        location: 'Rahul Yadav (Janakpur Bolts)',
         bentoSpan: 'wide',
         filename: 'IMG_9948.jpg',
         src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795719687/IMG_9948.jpg',
     },
     {
         id: 'moment-02',
-        title: 'Front-Foot Cover Drive Balance Drill',
+        title: 'Krishna Kumar Saroj selected as a net bowler IPL 2026 for PBKS',
         category: 'Cricket Bolts',
         date: 'Nov 2026',
-        telemetry: 'HEAD STILLNESS • 94%',
-        location: 'Batting Cage A',
+        telemetry: 'Punjab Kings (IPL 2026)',
+        location: 'Pratapgarh UP',
         bentoSpan: 'tall',
         filename: 'IMG_9954.jpg',
         src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795720126/IMG_9954.jpg',
     },
     {
         id: 'moment-03',
-        title: 'High-Velocity Outswing Release',
-        category: 'Net Practice',
+        title: '2023 Jharkhand team players',
+        category: 'Match Days',
         date: 'Nov 2026',
-        telemetry: 'NEW BALL',
-        location: 'Turf Net 2',
+        telemetry: '2023 Ranji Trophy',
+        location: 'M.S. DHONI PAVILION',
         bentoSpan: 'standard',
         filename: 'neerapace-outswing-release.webp',
         src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795720585/IMG_9958.jpg',
     },
     {
         id: 'moment-04',
-        title: 'met with Rohit sharma sir',
+        title: 'Neelesh Rai was selected by the RR as left-arm fast net bowler for IPL 2025',
         category: 'Match Days',
-        date: 'Oct 2026',
-        telemetry: 'PRACTICE XI • 40 OVERS',
-        location: 'Main Match Outfield',
-        bentoSpan: 'LEGEND',
+        date: '2025',
+        telemetry: 'IPL 2025 season ',
+        location: 'Met with Rohit sharma sir',
+        bentoSpan: 'tall',
         filename: 'neerapace-selection-trial-xi.webp',
         src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795720547/IMG_9955.jpg',
     },
@@ -122,12 +84,12 @@ const INITIAL_GALLERY_ITEMS = [
     },
     {
         id: 'moment-06',
-        title: 'Happy birthday',
-        category: 'Family',
+        title: 'Krishna Kumar Saroj with PBKS head coach Ricky Ponting',
+        category: 'Match Days',
         date: 'Sep 2026',
-        telemetry: 'REST LIFE',
-        location: 'Astro Spin Strip',
-        bentoSpan: 'birthday-boy',
+        telemetry: 'IPL 2026 ',
+        location: 'Training alongside with team',
+        bentoSpan: 'standard',
         filename: 'neerapace-spin-strike-rotation.webp',
         src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795720561/IMG_9956.jpg',
     },
@@ -144,22 +106,22 @@ const INITIAL_GALLERY_ITEMS = [
     },
     {
         id: 'moment-08',
-        title: 'Inter-Academy Weekend League Fixture',
+        title: 'Krishna Kumar Saroj with PBKS head coach Ricky Ponting',
         category: 'Match Days',
-        date: 'Aug 2026',
-        telemetry: 'MATCH DAY • TURF PITCH',
-        location: 'Stadium Ground',
+        date: 'Sep 2026',
+        telemetry: 'IPL 2026 ',
+        location: 'Training alongside with team',
         bentoSpan: 'standard',
         filename: 'neerapace-weekend-league.webp',
         src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795720574/IMG_9957.jpg',
     },
     {
         id: 'moment-09',
-        title: 'Man of the match',
-        category: 'Fitness',
+        title: 'Man of the match in Under-16 in the 2026-27 domestic season',
+        category: 'Batting',
         date: 'Aug 2026',
-        telemetry: '20M SPRINT • DIRECT HIT',
-        location: 'Outer Conditioning Ring',
+        telemetry: 'LEFT-HANDED • DIRECT HIT',
+        location: 'Yash N Choudhary(Himachal Pradesh) is a left-handed batter and bowler',
         bentoSpan: 'standard',
         filename: 'neerapace-sprint-direct-hit.webp',
         src: 'https://res.cloudinary.com/nwd62j6r/image/upload/v1795720515/IMG_9950.jpg',
@@ -246,19 +208,6 @@ function GridLayoutIcon({ className = 'w-4 h-4' }) {
             <rect x="14" y="3" width="7" height="7" rx="1.5" />
             <rect x="3" y="14" width="7" height="7" rx="1.5" />
             <rect x="14" y="14" width="7" height="7" rx="1.5" />
-        </svg>
-    );
-}
-
-function PinIcon({ className = 'w-4 h-4' }) {
-    return (
-        <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
     );
 }
@@ -492,9 +441,7 @@ export function CricketGallery() {
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState('bento'); // 'bento' | 'grid'
 
-    // Primary Squad Photo & Interactive Roster Pins States
-    const [showSquadPins, setShowSquadPins] = useState(true);
-    const [activePinId, setActivePinId] = useState('pin-coach');
+    // Primary Squad Photo loading states
     const [squadLoaded, setSquadLoaded] = useState(false);
     const [squadError, setSquadError] = useState(false);
 
@@ -673,17 +620,6 @@ export function CricketGallery() {
         }
     };
 
-    const selectedHotspot =
-        PRIMARY_SQUAD_PHOTO.hotspots.find((pin) => pin.id === activePinId) ||
-        PRIMARY_SQUAD_PHOTO.hotspots[0];
-
-    // Clamped horizontal alignment for mobile pin popovers so edge pins never overflow 320px viewports
-    const getClampedMobilePopoverAlignment = (xPercent) => {
-        if (xPercent <= 30) return 'left-0 translate-x-0';
-        if (xPercent >= 70) return 'right-0 left-auto translate-x-0';
-        return 'left-1/2 -translate-x-1/2';
-    };
-
     return (
         <section
             aria-label="NeeraPace Cricket Academy Gallery"
@@ -732,7 +668,7 @@ export function CricketGallery() {
             2. PRIMARY WIDE SQUAD SHOWCASE (`PRIMARY_SQUAD_PHOTO`)
         ==================================================================== */}
                 <div className="mb-10 sm:mb-12">
-                    <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
+                    <div className="mb-3.5 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                         <div>
                             <p className="text-[11px] font-semibold tracking-wider text-amber-400 uppercase">
                                 Featured Academy Squad
@@ -742,23 +678,11 @@ export function CricketGallery() {
                             </h2>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={() => setShowSquadPins((prev) => !prev)}
-                            aria-pressed={showSquadPins}
-                            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${showSquadPins
-                                ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400'
-                                : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700 hover:text-slate-200'
-                                }`}
-                        >
-                            <PinIcon className="h-3.5 w-3.5" />
-                            <span>Squad Pins: {showSquadPins ? 'ON' : 'OFF'}</span>
-                        </button>
                     </div>
 
-                    <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
-                        {/* Responsive Wide Frame: 16:10 on Mobile, 16:9 on Tablet, 21:9 on Desktop */}
-                        <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-950 sm:aspect-[16/9] lg:aspect-[21/9]">
+                    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900 sm:rounded-2xl">
+                        {/* Responsive Wide Frame: 4:3 on Mobile, 16:9 on Tablet, 21:9 on Desktop */}
+                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-950 sm:aspect-[16/9] lg:aspect-[21/9]">
                             {!squadLoaded && !squadError && (
                                 <div className="absolute inset-0 animate-pulse bg-slate-800/90" />
                             )}
@@ -789,8 +713,8 @@ export function CricketGallery() {
                             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1120]/90 via-transparent to-[#0B1120]/30" />
 
                             {/* Top-Left Telemetry Stamp */}
-                            <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
-                                <span className="rounded border border-slate-700/80 bg-[#0B1120]/90 px-2.5 py-1 font-mono text-[10px] font-medium text-amber-400 sm:text-[11px]">
+                            <div className="absolute inset-x-0 top-0 flex flex-wrap items-start gap-1.5 p-2.5 sm:inset-x-auto sm:left-3 sm:top-3 sm:gap-2 sm:p-0">
+                                <span className="max-w-full rounded border border-slate-700/80 bg-[#0B1120]/90 px-2 py-1 font-mono text-[9px] font-medium text-amber-400 sm:px-2.5 sm:text-[11px]">
                                     {PRIMARY_SQUAD_PHOTO.telemetry}
                                 </span>
                                 <span className="hidden rounded border border-slate-800 bg-[#0B1120]/85 px-2.5 py-1 text-[11px] text-slate-300 sm:inline-block">
@@ -798,81 +722,17 @@ export function CricketGallery() {
                                 </span>
                             </div>
 
-                            {/* Interactive Squad Roster Pins with Clamped Mobile Tooltip */}
-                            {showSquadPins &&
-                                !squadError &&
-                                PRIMARY_SQUAD_PHOTO.hotspots.map((pin) => {
-                                    const isSelected = activePinId === pin.id;
-                                    return (
-                                        <div
-                                            key={pin.id}
-                                            style={{ left: `${pin.x}%`, top: `${pin.y}%` }}
-                                            className={`absolute -translate-x-1/2 -translate-y-1/2 ${isSelected ? 'z-20' : 'z-10'
-                                                }`}
-                                        >
-                                            <button
-                                                type="button"
-                                                onClick={() => setActivePinId(pin.id)}
-                                                onMouseEnter={() => setActivePinId(pin.id)}
-                                                aria-label={`Inspect ${pin.name} (${pin.badge})`}
-                                                className={`flex items-center gap-1.5 rounded-full border px-2 py-1 text-[10px] font-semibold shadow-lg transition-transform sm:px-2.5 sm:text-[11px] ${isSelected
-                                                    ? 'scale-105 border-emerald-400 bg-emerald-600 text-white'
-                                                    : 'border-slate-600 bg-[#0B1120]/90 text-slate-100 hover:scale-105 hover:border-emerald-400'
-                                                    }`}
-                                            >
-                                                <span
-                                                    className={`h-2 w-2 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-400'
-                                                        }`}
-                                                />
-                                                <span className="hidden sm:inline">{pin.badge}</span>
-                                            </button>
-
-                                            {/* Clamped Mobile Popover (max-w-[200px], never overflows left/right edges) */}
-                                            {isSelected && (
-                                                <div
-                                                    className={`mt-1.5 w-44 max-w-[200px] rounded-lg border border-slate-700 bg-[#0B1120]/95 p-2.5 text-left shadow-xl backdrop-blur-sm sm:hidden absolute top-full ${getClampedMobilePopoverAlignment(
-                                                        pin.x
-                                                    )}`}
-                                                >
-                                                    <p className="text-[9px] font-bold tracking-wider text-amber-400 uppercase">
-                                                        {pin.badge}
-                                                    </p>
-                                                    <p className="mt-0.5 text-xs font-bold text-white">{pin.name}</p>
-                                                    <p className="mt-0.5 text-[10px] leading-snug text-slate-300">
-                                                        {pin.role}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-
-                            {/* Tablet/Desktop Scouting Card Overlay when Pins are ON */}
-                            {showSquadPins && selectedHotspot && (
-                                <div className="hidden max-w-sm rounded-xl border border-slate-700/90 bg-[#0B1120]/95 p-3.5 shadow-xl backdrop-blur-sm sm:absolute sm:bottom-4 sm:left-4 sm:block">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="text-[10px] font-bold tracking-wider text-amber-400 uppercase">
-                                            {selectedHotspot.badge}
-                                        </span>
-                                        <span className="text-[11px] text-slate-400">{selectedHotspot.role}</span>
-                                    </div>
-                                    <p className="mt-1 text-sm font-bold text-white">{selectedHotspot.name}</p>
-                                    <p className="mt-0.5 text-xs leading-relaxed text-slate-300">
-                                        {selectedHotspot.note}
-                                    </p>
-                                </div>
-                            )}
                         </div>
 
                         {/* Bottom Action Bar (Wraps cleanly on 320px Mobile) */}
-                        <div className="flex flex-col justify-between gap-3 border-t border-slate-800 bg-slate-900 px-4 py-3.5 sm:flex-row sm:items-center sm:px-6">
-                            <p className="text-xs text-slate-400 sm:text-sm">{PRIMARY_SQUAD_PHOTO.subtitle}</p>
+                        <div className="flex flex-col justify-between gap-3 border-t border-slate-800 bg-slate-900 px-3.5 py-3.5 sm:flex-row sm:items-center sm:px-6">
+                            <p className="text-xs leading-relaxed text-slate-300 sm:text-sm">{PRIMARY_SQUAD_PHOTO.subtitle}</p>
 
-                            <div className="flex flex-wrap items-center gap-2.5">
+                            <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:flex sm:items-center sm:gap-2.5">
                                 <button
                                     type="button"
                                     onClick={() => openLightbox(PRIMARY_SQUAD_PHOTO)}
-                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-700 bg-[#0B1120] px-3.5 py-2 text-xs font-semibold text-slate-100 transition-colors hover:border-slate-500 hover:bg-slate-800 sm:flex-initial sm:text-sm"
+                                    className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-slate-700 bg-[#0B1120] px-2 py-2.5 text-[11px] font-semibold text-slate-100 transition-colors hover:border-slate-500 hover:bg-slate-800 sm:px-3.5 sm:py-2 sm:text-sm"
                                 >
                                     <EyeIcon className="h-4 w-4 text-emerald-400" />
                                     <span>Fullscreen Preview</span>
@@ -882,7 +742,7 @@ export function CricketGallery() {
                                     type="button"
                                     onClick={() => handleDownload(PRIMARY_SQUAD_PHOTO)}
                                     disabled={downloadingId === PRIMARY_SQUAD_PHOTO.id}
-                                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-initial sm:text-sm"
+                                    className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-2 py-2.5 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60 sm:px-3.5 sm:py-2 sm:text-sm"
                                 >
                                     {downloadingId === PRIMARY_SQUAD_PHOTO.id ? (
                                         <SpinnerIcon className="h-4 w-4" />

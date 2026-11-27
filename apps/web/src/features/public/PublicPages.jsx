@@ -7,6 +7,7 @@ import { api, fieldErrors, imageUrl } from "../../lib/api.js";
 import { Button, Field } from "../../components/ui.jsx";
 import Demo from '../../saurabhLog/Demo.jsx';
 import CricketGallery from '../../saurabhLog/GallerySaurabh.jsx';
+import { HomeBannerSpotlight } from "./HomeBannerShowcase.jsx";
 
 function usePage(slug) {
   return useQuery({ queryKey: ["page", slug], queryFn: () => api.get(`/pages/${slug}`) });
@@ -15,13 +16,12 @@ function usePage(slug) {
 export function HomePage() {
   const page = usePage("home");
   const programs = useQuery({ queryKey: ["programs"], queryFn: () => api.get("/programs") });
-  const announcements = useQuery({ queryKey: ["public-announcements"], queryFn: () => api.get("/announcements/public") });
   return (
     <div>
       <PageTitle title="Home" description="Neera Pace Cricket Academy trains age-group and adult squads." />
       <section className="hero-grid relative overflow-hidden text-cream">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px)", backgroundSize: "44px 44px" }} />
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-5 py-20 lg:grid-cols-[1.08fr_.92fr] lg:px-8 lg:py-28">
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.08fr_.92fr] lg:gap-12 lg:px-8 lg:py-28">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-xs uppercase tracking-[0.22em] text-gold"><span className="h-1.5 w-1.5 rounded-full bg-gold" />Season 2026</div>
             <h1 className="mt-7 font-serif text-5xl leading-[1.02] md:text-7xl">{page.data?.heroTitle || "From the first grip to match day."}</h1>
@@ -31,17 +31,8 @@ export function HomePage() {
               <Link to="/programs" className="rounded-full border border-cream/25 bg-white/5 px-6 py-3.5 text-sm font-medium backdrop-blur transition hover:border-gold/60">Explore programs</Link>
             </div>
           </div>
-          <div className="pitch-stage relative hidden min-h-97.5 lg:block">
-            <div className="ball-orb right-6 top-2 z-20" />
-            <div className="pitch-card absolute inset-x-8 top-12 rounded-4xl border border-gold/25 bg-pitch-dark/70 p-7 backdrop-blur-xl">
-              <p className="text-xs uppercase tracking-[0.22em] text-gold">This week at Neera Pace</p>
-              <div className="mt-5 space-y-3">
-                {(announcements.data || []).slice(0, 3).map((item) => (
-                  <article key={item.id} className="rounded-2xl border border-white/10 bg-white/6 p-4"><h2 className="font-serif text-xl">{item.title}</h2><p className="mt-1 line-clamp-2 text-sm text-cream/65">{item.body}</p></article>
-                ))}
-                {!announcements.data?.length ? <div className="rounded-2xl border border-white/10 bg-white/6 p-5"><p className="font-serif text-2xl">Next net session</p><p className="mt-2 text-sm text-cream/65">The office will publish the weekly fixture and training notice here.</p></div> : null}
-              </div>
-            </div>
+          <div className="relative min-w-0">
+            <HomeBannerSpotlight />
           </div>
         </div>
       </section>
@@ -92,26 +83,103 @@ export function StoryPage({ slug }) {
 
 export function ProgramsPage() {
   const page = usePage("programs");
-  const programs = useQuery({ queryKey: ["programs"], queryFn: () => api.get("/programs") });
+  const programs = useQuery({
+    queryKey: ["programs"],
+    queryFn: () => api.get("/programs"),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+
   return (
-    <section className="mx-auto max-w-6xl px-4 py-16">
-      <PageTitle title="Programs" description="Age-group and adult cricket programs at Neera Pace." />
-      <h1 className="font-serif text-5xl text-pitch">{page.data?.heroTitle || "Programs"}</h1>
-      <p className="mt-3 max-w-2xl text-ink/75">{page.data?.heroSubtitle}</p>
-      {programs.isLoading ? <Spinner /> : null}
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        {(programs.data || []).map((program) => (
-          <article key={program.id} className="overflow-hidden rounded-3xl border border-line bg-paper">
-            {program.imageUrl ? <img src={imageUrl(program.imageUrl, 800)} alt="" className="h-44 w-full object-cover" loading="lazy" /> : null}
-            <div className="p-5">
-              <Badge tone="gold">{program.ageGroup}</Badge>
-              <h2 className="mt-3 font-serif text-3xl text-pitch">{program.name}</h2>
-              <p className="mt-2 text-sm">{program.description}</p>
-              <p className="mt-3 text-sm text-fairway">{program.scheduleSummary}</p>
+    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <PageTitle
+        title="Programs"
+        description="Age-group and adult cricket programs at Neera Pace."
+      />
+
+      {/* Editorial Header */}
+      <header className="max-w-2xl border-b border-line pb-8">
+        <h1 className="font-serif text-4xl tracking-tight text-pitch sm:text-5xl">
+          {page.data?.heroTitle || "Programs"}
+        </h1>
+        {page.data?.heroSubtitle ? (
+          <p className="mt-3 text-base leading-relaxed text-ink/75 sm:text-lg">
+            {page.data.heroSubtitle}
+          </p>
+        ) : null}
+      </header>
+
+      {/* Onboarding / Request Skeleton Loading */}
+      {programs.isLoading ? (
+        <div
+          aria-busy="true"
+          className="mt-10 grid gap-6 sm:gap-8 md:grid-cols-2"
+        >
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="flex flex-col overflow-hidden rounded-3xl border border-line bg-paper"
+            >
+              <div className="h-48 w-full animate-pulse bg-ink/5 sm:h-52" />
+              <div className="flex flex-1 flex-col p-6">
+                <div className="h-6 w-24 animate-pulse rounded-full bg-ink/10" />
+                <div className="mt-4 h-8 w-3/4 animate-pulse rounded-lg bg-ink/10" />
+                <div className="mt-3 space-y-2">
+                  <div className="h-3.5 w-full animate-pulse rounded bg-ink/5" />
+                  <div className="h-3.5 w-5/6 animate-pulse rounded bg-ink/5" />
+                </div>
+                <div className="mt-5 border-t border-line pt-4">
+                  <div className="h-4 w-1/2 animate-pulse rounded bg-ink/10" />
+                </div>
+              </div>
             </div>
-          </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : null}
+
+      {/* Programs Grid — Exact Original Properties Only */}
+      {!programs.isLoading ? (
+        <div className="mt-10 grid gap-6 sm:gap-8 md:grid-cols-2">
+          {(programs.data || []).map((program) => (
+            <article
+              key={program.id}
+              className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-paper transition-all duration-300 hover:-translate-y-1 hover:border-pitch/40 hover:shadow-md"
+            >
+              {program.imageUrl ? (
+                <div className="relative h-48 w-full overflow-hidden bg-ink/5 sm:h-52">
+                  <img
+                    src={imageUrl(program.imageUrl, 800)}
+                    alt=""
+                    className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              ) : null}
+
+              <div className="flex flex-1 flex-col p-6">
+                <div>
+                  <Badge tone="gold">{program.ageGroup}</Badge>
+                </div>
+
+                <h2 className="mt-3 font-serif text-2xl leading-snug text-pitch transition-colors group-hover:text-fairway sm:text-3xl">
+                  {program.name}
+                </h2>
+
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-ink/80">
+                  {program.description}
+                </p>
+
+                <p className="mt-5 border-t border-line pt-4 text-sm font-medium text-fairway">
+                  {program.scheduleSummary}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -273,7 +341,7 @@ export function ContactPage() {
             "Reach out for net trials, seasonal coaching batches, 1-on-1 pace mentorship, or academy visits."}
         </p>
         {page.data?.bodyHtml ? (
-          <div className="mt-4 text-sm leading-relaxed text-ink/80">
+          <div className="mt-4 text-sm leading-relaxed text-red/80">
             <RichText html={page.data?.bodyHtml} />
           </div>
         ) : null}
@@ -283,47 +351,37 @@ export function ContactPage() {
       <div className="mt-10 grid items-start gap-8 lg:grid-cols-12 lg:gap-12">
         {/* Left Column: Location, Coach Desk & Social Media */}
         <div className="order-2 min-w-0 space-y-5 lg:order-1 lg:col-span-5">
-          {/* Card 1: Academy Ground & Net Timings */}
-          <div className="rounded-3xl border border-line bg-paper p-6 transition-colors hover:border-pitch/35">
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-line bg-pitch/5 text-pitch">
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          {/* Academy Location */}
+          <article className="group relative overflow-hidden rounded-3xl border border-line bg-paper p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-pitch/35 hover:shadow-lg">
+            <div aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full border border-fairway/15 bg-fairway/5 transition-transform duration-500 group-hover:scale-110" />
+            <div className="relative flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-fairway/20 bg-fairway/10 text-fairway">
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+                  <circle cx="12" cy="10" r="2.5" />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-pitch/75">
-                  Academy Ground
+                <p className="text-xs font-semibold uppercase tracking-wider text-pitch/75">Visit Neera Pace</p>
+                <h2 className="mt-1 font-serif text-xl text-ink">Find the academy</h2>
+                <p className="mt-2 text-sm leading-relaxed text-ink/70">
+                  Open our location in Google Maps to view the academy and get directions for your visit.
                 </p>
-                <h2 className="mt-1 font-serif text-xl text-ink">
-                  Neera Pace Turf Nets &amp; Arena
-                </h2>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink/75">
-                  Sector 4 Sports Complex, Civil Lines, Prayagraj, Uttar Pradesh 211001
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-ink/70">
-                  <span className="rounded-lg border border-line px-2.5 py-1">
-                    Morning: 5:30 AM – 9:30 AM
-                  </span>
-                  <span className="rounded-lg border border-line px-2.5 py-1">
-                    Evening: 4:00 PM – 7:30 PM
-                  </span>
-                </div>
                 <a
-                  href="https://maps.google.com/?q=Prayagraj"
+                  href="https://share.google/FV4gvzreHewunYFhk"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-pitch hover:underline"
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-pitch px-5 py-3 text-sm font-semibold text-cream shadow-lg shadow-pitch/15 transition hover:-translate-y-0.5 hover:bg-pitch/90 sm:w-auto"
                 >
-                  Open in Google Maps
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 3h7v7m-1-6-9 9" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   </svg>
+                  <span>View location &amp; get directions</span>
                 </a>
               </div>
             </div>
-          </div>
+          </article>
 
           {/* Card 2: Head Coach & Direct Contact */}
           <div className="rounded-3xl border border-line bg-paper p-6 transition-colors hover:border-pitch/35">
