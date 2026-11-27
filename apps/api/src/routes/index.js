@@ -4,6 +4,7 @@ import sanitizeHtml from "sanitize-html";
 import {
   admissionDecisionSchema,
   announcementSchema,
+  bannerSchema,
   assignUserSchema,
   attendanceMarkSchema,
   attendanceQuerySchema,
@@ -115,6 +116,22 @@ router.patch("/gallery/:id", ...admin, validateBody(gallerySchema), asyncHandler
 }));
 router.delete("/gallery/:id", ...admin, asyncHandler(async (req, res) => {
   res.json({ data: await content.removeGalleryItem(req.params.id) });
+}));
+
+router.get("/banners", asyncHandler(async (_req, res) => {
+  res.json({ data: await content.listPublicBanners() });
+}));
+router.get("/banners/manage", ...admin, asyncHandler(async (_req, res) => {
+  res.json({ data: await content.listBanners() });
+}));
+router.post("/banners", ...admin, validateBody(bannerSchema), asyncHandler(async (req, res) => {
+  res.status(201).json({ data: await content.createBanner(req.body) });
+}));
+router.patch("/banners/:id", ...admin, validateBody(bannerSchema), asyncHandler(async (req, res) => {
+  res.json({ data: await content.updateBanner(req.params.id, req.body) });
+}));
+router.delete("/banners/:id", ...admin, asyncHandler(async (req, res) => {
+  res.json({ data: await content.removeBanner(req.params.id) });
 }));
 
 router.post("/enquiries", enquiryLimit, validateBody(enquirySchema), asyncHandler(async (req, res) => {
@@ -283,7 +300,7 @@ router.post("/uploads", requireAuth, uploadLimit, (req, res, next) => {
 }, asyncHandler(async (req, res) => {
   const folder = String(req.body?.folder || "");
   if (!UPLOAD_FOLDERS.includes(folder)) throw new ApiError(400, "UPLOAD", "Choose a valid image folder");
-  if ((folder === "gallery" || folder === "content") && req.user.role !== "admin") {
+  if ((folder === "gallery" || folder === "banners" || folder === "content") && req.user.role !== "admin") {
     throw new ApiError(403, "FORBIDDEN", "You cannot upload to that folder");
   }
   if (folder === "chat" && req.user.status !== "active") throw new ApiError(403, "ACCOUNT_INACTIVE", "Chat uploads require an active account");

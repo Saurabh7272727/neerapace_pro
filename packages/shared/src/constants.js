@@ -24,7 +24,7 @@ export const GENDERS = ["male", "female", "other"];
 
 export const PAGE_SLUGS = ["home", "about", "programs", "coaches", "facilities", "gallery", "contact"];
 
-export const UPLOAD_FOLDERS = ["avatars", "gallery", "content", "chat"];
+export const UPLOAD_FOLDERS = ["avatars", "gallery", "banners", "content", "chat"];
 
 export const OTP_PURPOSES = ["verify", "reset"];
 

@@ -1,6 +1,6 @@
 import { cacheAside, cacheDel } from "../../config/redis.js";
 import { cacheKeys } from "../../config/cacheKeys.js";
-import { Page, Program, GalleryItem, Enquiry, Announcement } from "../../models/index.js";
+import { Page, Program, GalleryItem, Banner, Enquiry, Announcement } from "../../models/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { presentProgram } from "../../utils/presenters.js";
 import { sanitizePlain, sanitizeRichText } from "../../utils/sanitize.js";
@@ -128,6 +128,75 @@ export async function removeGalleryItem(id) {
   const item = await GalleryItem.findByIdAndDelete(id);
   if (!item) throw new ApiError(404, "NOT_FOUND", "Gallery item not found");
   await cacheDel(cacheKeys.gallery);
+  return { ok: true, publicId: item.publicId || "" };
+}
+
+function presentBanner(item) {
+  return {
+    id: String(item._id),
+    imageUrl: item.imageUrl,
+    publicId: item.publicId || "",
+    caption: item.caption || "",
+    playerName: item.playerName || "",
+    tag: item.tag || "",
+    country: item.country || "",
+    teamName: item.teamName || "",
+    sortOrder: item.sortOrder || 0,
+    published: item.published,
+  };
+}
+
+export async function listPublicBanners() {
+  return cacheAside(cacheKeys.banners, 600, async () => {
+    const items = await Banner.find({ published: true }).sort({ sortOrder: 1, createdAt: -1 }).lean();
+    return items.map(presentBanner);
+  });
+}
+
+export async function listBanners() {
+  const items = await Banner.find().sort({ sortOrder: 1, createdAt: -1 }).lean();
+  return items.map(presentBanner);
+}
+
+function cleanBannerInput(input) {
+  return {
+    ...input,
+    caption: sanitizePlain(input.caption),
+    playerName: sanitizePlain(input.playerName),
+    tag: sanitizePlain(input.tag || ""),
+    country: sanitizePlain(input.country || ""),
+    teamName: sanitizePlain(input.teamName || ""),
+  };
+}
+
+export async function createBanner(input) {
+  if (await Banner.countDocuments() >= 5) {
+    throw new ApiError(409, "BANNER_LIMIT", "The homepage can show up to five banners. Delete one before adding another.");
+  }
+  const cleanInput = cleanBannerInput(input);
+  for (let slot = 0; slot < 5; slot += 1) {
+    try {
+      const item = await Banner.create({ ...cleanInput, slot });
+      await cacheDel(cacheKeys.banners);
+      return presentBanner(item);
+    } catch (error) {
+      if (error?.code !== 11000) throw error;
+    }
+  }
+  throw new ApiError(409, "BANNER_LIMIT", "The homepage can show up to five banners. Delete one before adding another.");
+}
+
+export async function updateBanner(id, input) {
+  const item = await Banner.findByIdAndUpdate(id, cleanBannerInput(input), { new: true, runValidators: true });
+  if (!item) throw new ApiError(404, "NOT_FOUND", "Banner not found");
+  await cacheDel(cacheKeys.banners);
+  return presentBanner(item);
+}
+
+export async function removeBanner(id) {
+  const item = await Banner.findByIdAndDelete(id);
+  if (!item) throw new ApiError(404, "NOT_FOUND", "Banner not found");
+  await cacheDel(cacheKeys.banners);
   return { ok: true, publicId: item.publicId || "" };
 }
 

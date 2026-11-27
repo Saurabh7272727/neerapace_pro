@@ -190,6 +190,18 @@ export const gallerySchema = z.object({
   published: z.boolean().optional().default(true),
 });
 
+export const bannerSchema = z.object({
+  imageUrl: z.string().url().refine((value) => value.startsWith("https://"), "Image URL must start with https://"),
+  publicId: z.string().max(200).optional().default(""),
+  caption: z.string().trim().min(2).max(200),
+  playerName: z.string().trim().min(2).max(80),
+  tag: z.string().trim().max(48).optional().default(""),
+  country: z.string().trim().max(80).optional().default(""),
+  teamName: z.string().trim().max(100).optional().default(""),
+  sortOrder: z.coerce.number().int().min(0).max(9999).optional().default(0),
+  published: z.boolean().optional().default(true),
+});
+
 export const studentUpdateSchema = z.object({
   name: z.string().trim().min(2).max(80).optional(),
   phone: phoneSchema.optional(),

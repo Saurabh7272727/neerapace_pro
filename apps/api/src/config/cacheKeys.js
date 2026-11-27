@@ -3,6 +3,7 @@ export const cacheKeys = {
   programs: "cache:public:programs",
   coaches: "cache:public:coaches",
   gallery: "cache:public:gallery",
+  banners: "cache:public:banners",
   announcements: "cache:public:announcements",
   stats: "cache:stats:admin",
 };

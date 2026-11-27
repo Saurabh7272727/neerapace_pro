@@ -7,6 +7,7 @@ export { Batch } from "./Batch.js";
 export { Attendance } from "./Attendance.js";
 export { Page } from "./Page.js";
 export { GalleryItem } from "./GalleryItem.js";
+export { Banner } from "./Banner.js";
 export { Announcement } from "./Announcement.js";
 export { Enquiry } from "./Enquiry.js";
 export { Notification } from "./Notification.js";
