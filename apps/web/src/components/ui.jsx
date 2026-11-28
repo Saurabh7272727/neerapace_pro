@@ -1,5 +1,5 @@
 import DOMPurify from "dompurify";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function cx(...parts) {
   return parts.filter(Boolean).join(" ");
@@ -37,6 +37,24 @@ export function Field({ label, error, children }) {
       {children}
       {error ? <span className="mt-1 block text-clay">{error}</span> : null}
     </label>
+  );
+}
+
+export function PasswordInput({ className = inputClass, ...props }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <span className="relative block">
+      <input {...props} type={visible ? "text" : "password"} className={cx(className, "pr-16")} />
+      <button
+        type="button"
+        aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
+        onClick={() => setVisible((current) => !current)}
+        className="absolute right-1 top-1/2 inline-flex min-h-10 min-w-14 -translate-y-1/2 items-center justify-center rounded-lg px-2 text-xs font-semibold text-fairway transition hover:bg-fairway/10 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-fairway"
+      >
+        {visible ? "Hide" : "Show"}
+      </button>
+    </span>
   );
 }
 

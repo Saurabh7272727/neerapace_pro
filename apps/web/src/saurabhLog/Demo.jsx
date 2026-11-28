@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProgramsPage } from '../features/public/PublicPages.jsx';
+import { PasswordInput } from '../components/ui.jsx';
 /**
  * Self-contained Inline SVG Icon Set
  * Zero external dependencies so browser preview & builds never fail on missing icon exports.
@@ -1192,8 +1193,7 @@ export default function App() {
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-[#CBD5E1] mb-1">Password</label>
-                                <input
-                                    type="password"
+                                <PasswordInput
                                     value={demoPass}
                                     onChange={(e) => setDemoPass(e.target.value)}
                                     placeholder="••••••••"

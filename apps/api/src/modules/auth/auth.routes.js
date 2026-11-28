@@ -130,8 +130,14 @@ router.get("/google/callback", asyncHandler(async (req, res) => {
         ? "/app/coach"
         : "/app/student";
     return res.redirect(new URL(destination, env.CLIENT_ORIGIN).toString());
-  } catch {
-    return googleLoginError(res, "failed");
+  } catch (error) {
+    const publicErrorCodes = new Set([
+      "SSO_ACCOUNT_NOT_FOUND",
+      "SSO_ACCOUNT_INACTIVE",
+      "SSO_DOMAIN",
+      "SSO_EMAIL_UNVERIFIED",
+    ]);
+    return googleLoginError(res, publicErrorCodes.has(error?.code) ? error.code : "failed");
   }
 }));
 

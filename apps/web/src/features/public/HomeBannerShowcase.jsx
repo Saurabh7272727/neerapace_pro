@@ -5,13 +5,25 @@ import { api, imageUrl } from "../../lib/api.js";
 const MAX_BANNERS = 5;
 
 function bannerPlacement(count, index) {
-  if (count === 1) return "col-span-2 aspect-[4/3] min-h-[16rem] lg:col-span-12 lg:row-span-2 lg:aspect-auto lg:min-h-0";
-  if (count === 2) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:row-span-2 lg:aspect-auto lg:min-h-0";
-  if (count === 3 && index === 0) return "col-span-2 aspect-[4/3] min-h-[16rem] lg:col-span-12 lg:aspect-auto lg:min-h-0";
-  if (count === 3) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:aspect-auto lg:min-h-0";
-  if (count === 4) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:aspect-auto lg:min-h-0";
-  if (index === 0) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:row-span-2 lg:aspect-auto lg:min-h-0";
-  return "aspect-[4/3] min-h-[16rem] lg:col-span-3 lg:aspect-auto lg:min-h-0";
+  if (count === 1) {
+    return "lg:col-span-12 lg:row-span-2";
+  }
+  if (count === 2) {
+    return "lg:col-span-6 lg:row-span-2";
+  }
+  if (count === 3 && index === 0) {
+    return "lg:col-span-12 lg:row-span-1";
+  }
+  if (count === 3) {
+    return "lg:col-span-6 lg:row-span-1";
+  }
+  if (count === 4) {
+    return "lg:col-span-6 lg:row-span-1";
+  }
+  if (index === 0) {
+    return "lg:col-span-6 lg:row-span-2";
+  }
+  return "lg:col-span-3 lg:row-span-1";
 }
 
 export function HomeBannerSpotlight() {
@@ -25,69 +37,203 @@ export function HomeBannerSpotlight() {
   const items = (banners.data || []).slice(0, MAX_BANNERS);
 
   return (
-    <section aria-label="Academy player spotlights" className="relative overflow-hidden rounded-[1.5rem] border border-gold/25 bg-pitch-dark/75 p-2.5 shadow-[0_30px_90px_-40px_rgba(0,0,0,.8)] sm:rounded-[2rem] sm:p-4">
-      <div aria-hidden="true" className="pointer-events-none absolute -right-14 -top-20 h-52 w-52 rounded-full border border-gold/10" />
-      <div className="relative mb-2.5 flex items-end justify-between gap-3 px-1 pt-1 sm:mb-4 sm:px-2">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-gold">Neera Pace · Academy stories</p>
+    <section
+      aria-label="Academy player spotlights"
+      className="relative overflow-hidden rounded-[1.5rem] border border-gold/25 bg-gradient-to-b from-pitch-dark/95 via-[#071914] to-[#05120e] p-3 shadow-[0_32px_90px_-35px_rgba(0,0,0,0.88)] sm:rounded-[2rem] sm:p-5"
+    >
+      {/* Subtle Decorative Ambient Glow & Ring */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full border border-gold/15 bg-gold/[0.03] blur-2xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-emerald-500/[0.04] blur-2xl"
+      />
+
+      {/* Section Header */}
+      <div className="relative mb-3 flex items-center justify-between gap-3 px-1 pt-0.5 sm:mb-4 sm:px-1.5">
+        <div className="flex items-center gap-2.5">
+          <span className="h-2 w-2 rounded-full bg-gold shadow-[0_0_10px_rgba(250,204,21,0.75)]" />
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-gold sm:text-[11px]">
+            Neera Pace · Academy Stories
+          </p>
         </div>
-        <span className="shrink-0 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-medium text-cream/70">{items.length}/{MAX_BANNERS}</span>
+
+        <div className="flex items-center gap-2">
+          {/* Mobile Swipe Cue */}
+          {!banners.isLoading && items.length > 1 ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-gold/20 bg-gold/[0.06] px-2.5 py-1 text-[10px] font-medium text-gold/90 lg:hidden">
+              Swipe
+              <svg
+                className="h-3 w-3 animate-pulse"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
+            </span>
+          ) : null}
+
+          <span className="shrink-0 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 text-[10px] font-semibold tracking-wider text-cream/80 backdrop-blur-sm">
+            {items.length}/{MAX_BANNERS}
+          </span>
+        </div>
       </div>
 
+      {/* Loading Skeleton: Horizontal Carousel on Mobile, Bento Grid on Desktop */}
       {banners.isLoading ? (
-        <div className="grid grid-cols-2 gap-2 lg:h-[22rem] lg:grid-cols-12 lg:grid-rows-2" aria-label="Loading player spotlights" aria-busy="true">
-          {Array.from({ length: 5 }, (_, index) => <div key={index} className={`min-h-[16rem] animate-pulse rounded-2xl bg-white/10 lg:min-h-0 ${index === 0 ? "aspect-[4/3] lg:col-span-6 lg:row-span-2 lg:aspect-auto" : "aspect-[4/3] lg:col-span-3 lg:aspect-auto"}`} />)}
+        <div
+          className="-mx-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:mx-0 lg:grid lg:h-[26rem] lg:grid-cols-12 lg:grid-rows-2 lg:gap-3.5 lg:overflow-visible lg:px-0 lg:pb-0"
+          aria-label="Loading player spotlights"
+          aria-busy="true"
+        >
+          {Array.from({ length: 5 }, (_, index) => (
+            <div
+              key={index}
+              className={`h-[21rem] w-[78vw] max-w-[310px] shrink-0 snap-center animate-pulse rounded-2xl border border-white/10 bg-white/[0.07] lg:h-auto lg:w-auto lg:max-w-none ${index === 0 ? "lg:col-span-6 lg:row-span-2" : "lg:col-span-3"
+                }`}
+            />
+          ))}
         </div>
       ) : banners.isError && !banners.data ? (
-        <div className="grid min-h-64 place-items-center rounded-2xl border border-white/10 bg-white/5 p-6 text-center lg:h-[22rem]" role="status">
+        /* Error State */
+        <div
+          className="grid min-h-64 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center lg:h-[26rem]"
+          role="status"
+        >
           <div>
-            <p className="text-sm text-cream/75">We couldn’t load player spotlights right now.</p>
-            <button type="button" onClick={() => banners.refetch()} className="mt-3 rounded-full border border-gold/40 px-4 py-2 text-xs font-semibold text-gold transition hover:bg-gold/10">Try again</button>
+            <p className="text-sm text-cream/80">
+              We couldn’t load player spotlights right now.
+            </p>
+            <button
+              type="button"
+              onClick={() => banners.refetch()}
+              className="mt-3.5 rounded-full border border-gold/45 bg-gold/10 px-4 py-2 text-xs font-semibold text-gold transition hover:bg-gold/20"
+            >
+              Try again
+            </button>
           </div>
         </div>
       ) : items.length ? (
-        <div className="grid grid-cols-2 gap-2 lg:h-[22rem] lg:grid-cols-12 lg:grid-rows-2">
-          {items.map((item, index) => (
-            <motion.article
-              key={item.id}
-              initial={{ opacity: 0, y: 16, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.42, delay: index * 0.07, ease: "easeOut" }}
-              whileHover={{ y: -3, scale: 1.015 }}
-              className={`group relative isolate flex min-w-0 flex-col overflow-hidden rounded-2xl bg-[#091d18] ${bannerPlacement(items.length, index)}`}
-            >
-              <div className="relative min-h-0 flex-1 overflow-hidden bg-[#091d18]">
-                <img
-                  src={imageUrl(item.imageUrl, 720)}
-                  alt=""
-                  aria-hidden="true"
-                  loading="lazy"
-                  decoding="async"
-                  className="absolute inset-0 h-full w-full scale-110 object-cover object-top opacity-40 blur-xl"
-                />
-                <img
-                  src={imageUrl(item.imageUrl, 720)}
-                  alt={`${item.playerName} — ${item.caption}`}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  decoding="async"
-                  className="absolute inset-0 z-10 h-full w-full object-cover object-top"
-                />
-                {item.tag ? <span className="absolute left-2 top-2 z-20 max-w-[calc(100%-1rem)] truncate rounded-full border border-white/25 bg-pitch/75 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-white backdrop-blur sm:left-3 sm:top-3 sm:px-3 sm:text-[10px]">{item.tag}</span> : null}
-              </div>
-              <div className="relative z-20 shrink-0 bg-[#081b15]/95 p-2.5 sm:p-3.5">
-                <h3 className="truncate font-serif text-sm text-white sm:text-base lg:text-lg">{item.playerName}</h3>
-                <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-white/75 sm:text-xs">{item.caption}</p>
-                {[item.teamName, item.country].filter(Boolean).length ? <p className="mt-1.5 truncate text-[9px] font-semibold uppercase tracking-wider text-gold sm:text-[10px]">{[item.teamName, item.country].filter(Boolean).join(" · ")}</p> : null}
-              </div>
-            </motion.article>
-          ))}
+        /* Spotlight Cards: Animated Horizontal Carousel on Mobile (<lg), Editorial Bento Grid on Desktop (lg+) */
+        <div className="-mx-3 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-3 pb-1.5 pt-0.5 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:mx-0 lg:grid lg:h-[26rem] lg:grid-cols-12 lg:grid-rows-2 lg:gap-3.5 lg:overflow-visible lg:px-0 lg:py-0">
+          {items.map((item, index) => {
+            const isFeatured = index === 0;
+            const metaLine = [item.teamName, item.country]
+              .filter(Boolean)
+              .join(" · ");
+
+            return (
+              <motion.article
+                key={item.id}
+                initial={{ opacity: 0, x: 24, y: 12, scale: 0.96 }}
+                whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{
+                  duration: 0.48,
+                  delay: index * 0.08,
+                  ease: [0.22, 1, 0.36, 1],
+                }}
+                whileHover={{ y: -3, scale: 1.012 }}
+                whileTap={{ scale: 0.985 }}
+                className={`group relative isolate flex h-[22rem] w-[80vw] max-w-[320px] shrink-0 snap-center flex-col justify-end overflow-hidden rounded-2xl border border-white/12 bg-[#081b15] shadow-[0_14px_34px_-14px_rgba(0,0,0,0.85)] transition-colors duration-300 hover:border-gold/45 lg:h-auto lg:w-auto lg:max-w-none ${bannerPlacement(
+                  items.length,
+                  index
+                )}`}
+              >
+                {/* Full-Bleed Portrait / Action Media Layer */}
+                <div className="absolute inset-0 overflow-hidden bg-[#081b15]">
+                  <img
+                    src={imageUrl(item.imageUrl, 720)}
+                    alt=""
+                    aria-hidden="true"
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full scale-110 object-cover object-top opacity-35 blur-xl"
+                  />
+                  <img
+                    src={imageUrl(item.imageUrl, 720)}
+                    alt={`${item.playerName} — ${item.caption}`}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    decoding="async"
+                    className="relative z-10 h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
+
+                  {/* Multi-Stop Editorial Gradient Scrim for Crisp Text Readability */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 z-20 bg-gradient-to-t from-[#04100c] via-[#061712]/70 to-transparent opacity-95"
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 z-20 ring-1 ring-inset ring-white/10 transition-all duration-300 group-hover:ring-gold/35"
+                  />
+                </div>
+
+                {/* Top Tag Badge */}
+                {item.tag ? (
+                  <span className="absolute left-3 top-3 z-30 max-w-[calc(100%-1.5rem)] truncate rounded-full border border-white/25 bg-[#061813]/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white shadow-sm backdrop-blur-md">
+                    {item.tag}
+                  </span>
+                ) : null}
+
+                {/* Bottom Player Story Info Overlay */}
+                <div className="relative z-30 flex flex-col justify-end p-4 sm:p-4 lg:p-5">
+                  <h3
+                    className={`truncate font-serif tracking-tight text-white transition-colors duration-300 group-hover:text-gold ${isFeatured
+                        ? "text-lg sm:text-xl lg:text-2xl"
+                        : "text-base sm:text-lg"
+                      }`}
+                  >
+                    {item.playerName}
+                  </h3>
+
+                  <p
+                    className={`mt-1 leading-snug text-white/80 ${isFeatured
+                        ? "line-clamp-2 text-xs sm:text-sm"
+                        : "line-clamp-2 text-xs"
+                      }`}
+                  >
+                    {item.caption}
+                  </p>
+
+                  {metaLine ? (
+                    <div className="mt-2.5 flex items-center gap-1.5 border-t border-white/10 pt-2">
+                      <span className="h-1 w-1 shrink-0 rounded-full bg-gold" />
+                      <p className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-gold">
+                        {metaLine}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              </motion.article>
+            );
+          })}
         </div>
       ) : (
-        <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-6 text-center lg:h-[22rem]">
+        /* Empty State */
+        <div className="grid min-h-64 place-items-center rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-6 text-center lg:h-[26rem]">
           <div>
-            <span aria-hidden="true" className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-gold/25 bg-gold/10 text-xl text-gold">✦</span>
-            <p className="mt-3 font-serif text-lg text-white">Player stories are on the way</p>
-            <p className="mt-1 text-xs text-cream/55">Academy highlights will appear here.</p>
+            <span
+              aria-hidden="true"
+              className="mx-auto grid h-12 w-12 place-items-center rounded-2xl border border-gold/25 bg-gold/10 text-xl text-gold"
+            >
+              ✦
+            </span>
+            <p className="mt-3 font-serif text-lg text-white">
+              Player stories are on the way
+            </p>
+            <p className="mt-1 text-xs text-cream/55">
+              Academy highlights will appear here.
+            </p>
           </div>
         </div>
       )}

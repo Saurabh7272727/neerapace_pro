@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { forgotSchema, loginSchema, registerSchema, resetSchema, verifyOtpSchema } from "@neerapace/shared";
-import { Button, ErrorNote, Field, PageTitle, inputClass } from "../../components/ui.jsx";
+import { Button, ErrorNote, Field, PageTitle, PasswordInput, inputClass } from "../../components/ui.jsx";
 import { api, fieldErrors } from "../../lib/api.js";
 import { homeForRole } from "../../lib/access.js";
 import { useQuery } from "@tanstack/react-query";
@@ -100,6 +100,10 @@ export function LoginPage() {
     const messages = {
       cancelled: "Google sign-in was cancelled.",
       state: "Google sign-in could not verify this request. Please try again.",
+      SSO_ACCOUNT_NOT_FOUND: "This Google email doesn’t have a Neera Pace account yet. Complete the player application first, then use Google sign-in.",
+      SSO_ACCOUNT_INACTIVE: "Your academy account isn’t active yet. Please contact the academy office for help.",
+      SSO_DOMAIN: "This Google email domain isn’t allowed for academy sign-in. Try an approved account or contact the office.",
+      SSO_EMAIL_UNVERIFIED: "Google couldn’t confirm this email address. Verify it with Google and try again.",
       failed: "Google sign-in failed. Check your account and try again.",
     };
     setError({ message: messages[googleError] || messages.failed });
@@ -146,7 +150,7 @@ export function LoginPage() {
     <AuthShell title="Sign in" description="Players, coaches and the office use the same door.">
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field label="Email" error={errors.email}><input className={inputClass} name="email" type="email" autoComplete="username" /></Field>
-        <Field label="Password" error={errors.password}><input className={inputClass} name="password" type="password" autoComplete="current-password" /></Field>
+        <Field label="Password" error={errors.password}><PasswordInput className={inputClass} name="password" autoComplete="current-password" /></Field>
         <ErrorNote error={error} />
         {error?.code === "EMAIL_UNVERIFIED" ? <Link className="text-sm text-fairway" to="/verify">Enter your email code</Link> : null}
         <Button type="submit" disabled={submitting}>{submitting ? "Signing in..." : "Sign in"}</Button>
@@ -265,7 +269,7 @@ export function RegisterPage() {
             <Field label="Email address" error={errors.email}><input className={inputClass} name="email" type="email" autoComplete="email" placeholder="you@example.com" /></Field>
             <Field label="Phone number" error={errors.phone}><input className={inputClass} name="phone" type="tel" autoComplete="tel" placeholder="Include country code if needed" /></Field>
             <Field label="Create password" error={errors.password}>
-              <input className={inputClass} name="password" type="password" autoComplete="new-password" placeholder="At least 8 characters" />
+              <PasswordInput className={inputClass} name="password" autoComplete="new-password" placeholder="At least 8 characters" />
               <span className="mt-1 block text-xs text-ink/50">Use at least 8 characters with a letter and a number.</span>
             </Field>
           </div>
@@ -320,8 +324,9 @@ export function RegisterPage() {
         <p className="text-center text-xs leading-5 text-ink/55">You’ll receive an email verification code. The office reviews applications after the email is confirmed.</p>
       </form>
 
-      <div className="my-5 flex items-center gap-3 text-xs text-ink/40"><span className="h-px flex-1 bg-line" />or continue with<span className="h-px flex-1 bg-line" /></div>
-      <GoogleSignIn />
+      <div className="my-5 rounded-2xl border border-line bg-white px-4 py-3 text-sm leading-6 text-ink/70">
+        Google sign-in is for active academy accounts. New players should submit the application above, verify their email, and wait for the academy to activate the account.
+      </div>
       <p className="mt-5 text-center text-sm text-ink/65">Already have an account? <Link className="font-medium text-fairway" to="/login">Sign in</Link></p>
     </AuthShell>
   );
@@ -422,7 +427,7 @@ export function ForgotPage() {
             <button type="button" className="text-sm font-semibold text-fairway hover:underline" onClick={() => { setStep("email"); setOtp(""); setPassword(""); setError(null); }}>Change</button>
           </div>
           <Field label="6-digit email code"><OtpCodeInput value={otp} onChange={setOtp} /></Field>
-          <Field label="New password"><input className={inputClass} name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></Field>
+          <Field label="New password"><PasswordInput className={inputClass} name="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></Field>
           <ErrorNote error={error} />
           <Button type="submit" disabled={saving}>{saving ? "Updating password…" : "Update password"}</Button>
           <button type="button" disabled={sending} onClick={requestCode} className="block text-sm font-medium text-fairway hover:underline">{sending ? "Sending another code…" : "Send another code"}</button>
@@ -459,7 +464,7 @@ export function ResetPage() {
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field label="Email"><input className={inputClass} name="email" type="email" /></Field>
         <Field label="6-digit email code"><OtpCodeInput value={otp} onChange={setOtp} /></Field>
-        <Field label="New password"><input className={inputClass} name="password" type="password" /></Field>
+        <Field label="New password"><PasswordInput className={inputClass} name="password" /></Field>
         <ErrorNote error={error} />
         {done ? <p className="text-sm text-fairway"><Link to="/login">Password updated. Sign in.</Link></p> : null}
         <Button type="submit" disabled={saving}>{saving ? "Updating password…" : "Update password"}</Button>

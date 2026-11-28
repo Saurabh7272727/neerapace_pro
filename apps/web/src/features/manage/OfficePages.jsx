@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { announcementSchema, bannerSchema, batchSchema, coachCreateSchema, coachUpdateSchema, gallerySchema, pageSchema, programSchema, registerSchema, studentUpdateSchema } from "@neerapace/shared";
-import { Badge, Button, Empty, ErrorNote, Field, Modal, PageTitle, Spinner, inputClass } from "../../components/ui.jsx";
+import { Badge, Button, Empty, ErrorNote, Field, Modal, PageTitle, PasswordInput, Spinner, inputClass } from "../../components/ui.jsx";
 import { ImagePicker } from "../../components/ImagePicker.jsx";
 import { useSession } from "../../hooks/useSession.js";
 import { api, fieldErrors, imageUrl } from "../../lib/api.js";
@@ -179,7 +179,7 @@ export function StudentsPage() {
       <Modal open={open} title="Add player" onClose={() => setOpen(false)}>
         <form className="grid gap-3" onSubmit={createStudent}>
           {[["name", "Player name", "text"], ["email", "Email", "email"], ["phone", "Phone", "text"], ["password", "Password", "password"], ["dateOfBirth", "Date of birth", "date"], ["address", "Address", "text"], ["guardianName", "Guardian name", "text"], ["guardianPhone", "Guardian phone", "text"], ["guardianEmail", "Guardian email", "email"]].map(([name, label, type]) => (
-            <Field key={name} label={label} error={errors[name]}><input className={inputClass} name={name} type={type} /></Field>
+            <Field key={name} label={label} error={errors[name]}>{type === "password" ? <PasswordInput className={inputClass} name={name} /> : <input className={inputClass} name={name} type={type} />}</Field>
           ))}
           <Field label="Gender" error={errors.gender}><select className={inputClass} name="gender" defaultValue=""><option value="" disabled>Choose</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></Field>
           <Field label="Program" error={errors.programId}><select className={inputClass} name="programId" defaultValue=""><option value="" disabled>Choose</option>{(programs.data || []).map((program) => <option key={program.id} value={program.id}>{program.name}</option>)}</select></Field>
@@ -232,7 +232,7 @@ export function CoachesAdminPage() {
       <Modal open={open} title="New coach" onClose={() => setOpen(false)}>
         <form className="grid gap-3" onSubmit={onSubmit}>
           {["name", "email", "phone", "password", "specialization", "bio"].map((name) => (
-            <Field key={name} label={name} error={errors[name]}><input className={inputClass} name={name} type={name === "password" ? "password" : "text"} /></Field>
+            <Field key={name} label={name} error={errors[name]}>{name === "password" ? <PasswordInput className={inputClass} name={name} /> : <input className={inputClass} name={name} type="text" />}</Field>
           ))}
           <Field label="Years"><input className={inputClass} name="experienceYears" type="number" defaultValue="0" /></Field>
           <label className="text-sm"><input name="isPublic" type="checkbox" defaultChecked /> Show on the public coaches page</label>
