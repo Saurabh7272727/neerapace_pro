@@ -4,6 +4,16 @@ import { api, imageUrl } from "../../lib/api.js";
 
 const MAX_BANNERS = 5;
 
+function fallbackBannerImage(event) {
+  const image = event.currentTarget;
+  const originalUrl = image.dataset.original;
+  if (originalUrl && image.src !== new URL(originalUrl, document.baseURI).href) {
+    image.src = originalUrl;
+    return;
+  }
+  image.style.display = "none";
+}
+
 function bannerPlacement(count, index) {
   if (count === 1) {
     return "lg:col-span-12 lg:row-span-2";
@@ -149,21 +159,25 @@ export function HomeBannerSpotlight() {
                 )}`}
               >
                 {/* Full-Bleed Portrait / Action Media Layer */}
-                <div className="absolute inset-0 overflow-hidden bg-[#081b15]">
+                <div className="absolute inset-0 z-0 overflow-hidden bg-[#081b15]">
                   <img
                     src={imageUrl(item.imageUrl, 720)}
+                    data-original={item.imageUrl}
+                    onError={fallbackBannerImage}
                     alt=""
                     aria-hidden="true"
                     loading="lazy"
                     decoding="async"
-                    className="h-full w-full scale-110 object-cover object-top opacity-35 blur-xl"
+                    className="absolute inset-0 h-full w-full scale-110 object-cover object-top opacity-35 blur-xl"
                   />
                   <img
                     src={imageUrl(item.imageUrl, 720)}
+                    data-original={item.imageUrl}
+                    onError={fallbackBannerImage}
                     alt={`${item.playerName} — ${item.caption}`}
                     loading={index === 0 ? "eager" : "lazy"}
                     decoding="async"
-                    className="relative z-10 h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
+                    className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-700 ease-out group-hover:scale-105"
                   />
 
                   {/* Multi-Stop Editorial Gradient Scrim for Crisp Text Readability */}
