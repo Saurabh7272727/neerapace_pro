@@ -6,6 +6,7 @@ import { ImagePicker } from "../../components/ImagePicker.jsx";
 import { useSession } from "../../hooks/useSession.js";
 import { api, fieldErrors, imageUrl } from "../../lib/api.js";
 import { StudentContactActions } from "./StudentContactActions.jsx";
+import { StudentDetailGrid, StudentDetailPortal } from "./StudentDetailPortal.jsx";
 
 function useInvalidate(keys) {
   const queryClient = useQueryClient();
@@ -27,7 +28,7 @@ export function StudentsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
-  const students = useQuery({ queryKey: ["students", page, search, session.data?.role], queryFn: () => api.getPage(`/students?${new URLSearchParams({ ...(session.data?.role === "admin" ? { status: "approved" } : {}), page: String(page), limit: "30", ...(search ? { q: search } : {}) })}`) });
+  const students = useQuery({ queryKey: ["students", page, search, session.data?.role], queryFn: () => api.getPage(`/students?${new URLSearchParams({ page: String(page), limit: "30", ...(search ? { q: search } : {}) })}`) });
   const programs = useQuery({ queryKey: ["programs-all"], queryFn: () => api.get("/programs/all"), enabled: session.data?.role === "admin" });
   const refresh = useInvalidate(["students", "stats"]);
   const [open, setOpen] = useState(false);
@@ -36,10 +37,6 @@ export function StudentsPage() {
   const admin = session.data?.role === "admin";
   const rows = students.data?.data || [];
   const selectedStudent = admin ? rows.find((student) => student.userId === selectedStudentId) : null;
-  const studentDetailsRef = useRef(null);
-  useEffect(() => {
-    if (selectedStudent) studentDetailsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [selectedStudent?.userId]);
 
   async function createStudent(event) {
     event.preventDefault();
@@ -58,9 +55,10 @@ export function StudentsPage() {
   }
 
   async function removeStudent(userId) {
-    if (!window.confirm("Remove this player account?")) return;
+    if (!window.confirm("Permanently delete this student and their profile, attendance, notifications and chat data? This cannot be undone.")) return;
     try {
       await api.del(`/students/${userId}`);
+      setSelectedStudentId("");
       refresh();
     } catch (err) {
       setError(err);
@@ -78,7 +76,7 @@ export function StudentsPage() {
       {admin ? <input className={`${inputClass} mt-4 max-w-md`} value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); setSelectedStudentId(""); }} placeholder="Search players" aria-label="Search players" /> : null}
       {students.isLoading ? <Spinner /> : null}
       {selectedStudent ? (
-        <section ref={studentDetailsRef} className="mt-6 scroll-mt-4 rounded-3xl border border-pitch/20 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="selected-student-heading">
+        <section className="hidden" aria-labelledby="selected-student-heading">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wide text-fairway">Student details</p>
@@ -104,20 +102,48 @@ export function StudentsPage() {
           <StudentContactActions student={selectedStudent} />
         </section>
       ) : null}
+      <StudentDetailPortal
+        open={Boolean(selectedStudent)}
+        title={selectedStudent?.name || "Student details"}
+        eyebrow={selectedStudent?.registrationId || "Student record"}
+        onClose={() => setSelectedStudentId("")}
+        footer={selectedStudent ? <Button variant="danger" onClick={() => removeStudent(selectedStudent.userId)}>Remove student</Button> : null}
+      >
+        {selectedStudent ? <>
+          <ErrorNote error={error} />
+          <StudentDetailGrid fields={[
+            ["Email", selectedStudent.email],
+            ["Phone", selectedStudent.phone],
+            ["Date of birth", selectedStudent.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString() : "Not provided"],
+            ["Gender", selectedStudent.gender],
+            ["Program", selectedStudent.program?.name],
+            ["Batch", selectedStudent.batch?.name || "Not assigned"],
+            ["Home address", selectedStudent.address],
+            ["Guardian", selectedStudent.guardianName],
+            ["Guardian phone", selectedStudent.guardianPhone],
+            ["Guardian email", selectedStudent.guardianEmail],
+            ["Account status", selectedStudent.status],
+            ["Admission status", selectedStudent.admissionStatus],
+          ]} />
+          <div className="mt-5"><StudentContactActions student={selectedStudent} /></div>
+        </> : null}
+      </StudentDetailPortal>
       <div className="mt-6 space-y-3">
         {rows.map((student) => (
           <article key={student.userId} className={`grid gap-3 rounded-2xl border p-4 sm:grid-cols-[1fr_auto] sm:items-center ${student.userId === selectedStudentId ? "border-pitch bg-cream/30" : "border-line bg-paper"}`}>
             {admin ? (
-              <button type="button" aria-pressed={student.userId === selectedStudentId} onClick={() => setSelectedStudentId(student.userId)} className="min-w-0 rounded-xl p-1 text-left transition hover:bg-cream/70">
+              <button type="button" aria-haspopup="dialog" onClick={() => { setError(null); setSelectedStudentId(student.userId); }} className="min-w-0 rounded-xl p-2 text-left transition hover:bg-cream/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-pitch">
                 <span className="block text-lg font-semibold text-pitch">{student.name}</span>
                 <span className="mt-1 block break-all text-sm text-ink/70">{student.email || "No email provided"}</span>
-                <span className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-ink/70">
+                <span className="mt-2 inline-flex"><Badge tone={student.status === "active" ? "pitch" : "gold"}>{student.status || "Unknown status"}</Badge></span>
+                <span className="mt-2 block text-sm text-ink/65">{student.program?.name || "No program"}</span>
+                <span className="hidden">
                   <span>Registration: {student.registrationId || "—"}</span>
                   <span>Program: {student.program?.name || "—"}</span>
                   <span>Batch: {student.batch?.name || "Not assigned"}</span>
                   <span>Status: {student.status || "—"}</span>
                 </span>
-                <span className="mt-2 block text-sm font-semibold text-fairway">{student.userId === selectedStudentId ? "Details shown above" : "View student details"}</span>
+                <span className="mt-2 block text-xs font-semibold text-fairway">View full details</span>
               </button>
             ) : (
               <div className="min-w-0 p-1">
@@ -130,7 +156,7 @@ export function StudentsPage() {
           </article>
         ))}
       </div>
-      {!rows.length && !students.isLoading ? <div className="mt-6"><Empty title="No players" body="Approved players appear after admission or an office entry." /></div> : null}
+      {!rows.length && !students.isLoading ? <div className="mt-6"><Empty title="No players" body="Student accounts and applications appear here, including applicants waiting to verify their email." /></div> : null}
       {admin && students.data?.meta ? <div className="mt-4 flex items-center justify-between text-sm"><span>{students.data.meta.total} players · page {page}</span><div className="flex gap-2"><Button variant="ghost" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>Previous</Button><Button variant="ghost" disabled={page * students.data.meta.limit >= students.data.meta.total} onClick={() => setPage((value) => value + 1)}>Next</Button></div></div> : null}
       <Modal open={open} title="Add player" onClose={() => setOpen(false)}>
         <form className="grid gap-3" onSubmit={createStudent}>
@@ -713,6 +739,7 @@ export function GalleryAdminPage() {
   const [file, setFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [removingId, setRemovingId] = useState("");
   async function add(event) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -741,6 +768,19 @@ export function GalleryAdminPage() {
       setUploadProgress(null);
     }
   }
+  async function removeGalleryItem(item) {
+    if (!window.confirm(`Permanently remove “${item.caption || "this gallery image"}”${item.publicId ? " from Cloudinary too" : ""}?`)) return;
+    setRemovingId(item.id);
+    setError(null);
+    try {
+      await api.del(`/gallery/${item.id}`);
+      refresh();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setRemovingId("");
+    }
+  }
   return (
     <section>
       <PageTitle title="Gallery" />
@@ -758,7 +798,7 @@ export function GalleryAdminPage() {
             <img src={imageUrl(item.imageUrl, 640)} alt={item.caption || ""} className="h-44 w-full object-cover" loading="lazy" />
             <figcaption className="flex items-center justify-between px-4 py-3 text-sm">
               <span>{item.caption || "Untitled"}</span>
-              <Button variant="ghost" onClick={() => api.del(`/gallery/${item.id}`).then(refresh)}>Remove</Button>
+              <Button variant="ghost" disabled={removingId === item.id} onClick={() => removeGalleryItem(item)}>{removingId === item.id ? "Deleting…" : "Remove"}</Button>
             </figcaption>
           </figure>
         ))}
@@ -771,21 +811,40 @@ export function ProgramsAdminPage() {
   const programs = useQuery({ queryKey: ["programs-all"], queryFn: () => api.get("/programs/all") });
   const refresh = useInvalidate(["programs-all", "programs"]);
   const [error, setError] = useState(null);
+  const [file, setFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   async function submit(event) {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
     payload.sortOrder = Number(payload.sortOrder || 0);
     payload.isPublished = payload.isPublished === "on";
     const parsed = programSchema.safeParse(payload);
     if (!parsed.success) return setError({ message: "Complete the program name, description, age group and schedule." });
+    setError(null);
+    setUploading(true);
+    setUploadProgress(file ? 0 : null);
     try {
-      await api.post("/programs", parsed.data);
-      event.currentTarget.reset();
+      let imageUrlValue = parsed.data.imageUrl;
+      let imagePublicId = parsed.data.imagePublicId;
+      if (file) {
+        const uploaded = await api.upload("programs", file, setUploadProgress);
+        imageUrlValue = uploaded.url;
+        imagePublicId = uploaded.publicId;
+      }
+      await api.post("/programs", { ...parsed.data, imageUrl: imageUrlValue, imagePublicId });
+      form.reset();
+      setFile(null);
+      setUploadProgress(null);
       refresh();
       setError(null);
     } catch (err) {
       setError(err);
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
     }
   }
 
@@ -793,7 +852,9 @@ export function ProgramsAdminPage() {
     <section>
       <PageTitle title="Programs" />
       <h1 className="font-serif text-4xl text-pitch">Programs</h1>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/70">Manage public training programs and their cover images. Uploaded images are converted to WebP and stored in the academy Cloudinary programs folder.</p>
       <form className="mt-6 grid gap-3 rounded-3xl border border-line bg-paper p-5 md:grid-cols-2" onSubmit={submit}>
+        <div className="md:col-span-2"><ImagePicker label={uploading ? "Uploading program image…" : "Choose program image"} file={file} onFileChange={setFile} disabled={uploading} uploadProgress={uploadProgress} /><p className="mt-2 text-xs text-ink/55">Optional cover photo. It will appear on the public Programs page.</p></div>
         <Field label="Name"><input className={inputClass} name="name" required /></Field>
         <Field label="Age group"><input className={inputClass} name="ageGroup" required /></Field>
         <Field label="Schedule"><input className={inputClass} name="scheduleSummary" required /></Field>
@@ -801,16 +862,19 @@ export function ProgramsAdminPage() {
         <Field label="Description"><textarea className={`${inputClass} md:col-span-2`} name="description" rows={4} required /></Field>
         <label className="text-sm"><input name="isPublished" type="checkbox" defaultChecked /> Published</label>
         <ErrorNote error={error} />
-        <div><Button type="submit">Add program</Button></div>
+        <div><Button type="submit" disabled={uploading}>{uploading ? "Saving program…" : "Add program"}</Button></div>
       </form>
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         {(programs.data || []).map((program) => (
-          <article key={program.id} className="rounded-3xl border border-line bg-paper p-5">
+          <article key={program.id} className="overflow-hidden rounded-3xl border border-line bg-paper">
+            {program.imageUrl ? <img src={imageUrl(program.imageUrl, 800)} alt={`${program.name} training program`} className="h-48 w-full bg-ink/5 object-cover sm:h-56" loading="lazy" decoding="async" /> : null}
+            <div className="p-5">
             <h2 className="font-serif text-2xl text-pitch">{program.name}</h2>
             <p className="text-sm text-ink/70">{program.ageGroup} · {program.scheduleSummary}</p>
             <p className="mt-2 text-sm">{program.description}</p>
             <Badge tone={program.isPublished ? "gold" : "clay"}>{program.isPublished ? "Published" : "Hidden"}</Badge>
-            <div className="mt-3"><Button variant="danger" onClick={async () => { if (window.confirm("Remove this program?")) { try { await api.del(`/programs/${program.id}`); refresh(); } catch (err) { setError(err); } } }}>Remove</Button></div>
+            <div className="mt-3"><Button variant="danger" onClick={async () => { const message = program.imagePublicId ? "Permanently remove this program and its Cloudinary image? This cannot be undone." : "Permanently remove this program? This cannot be undone."; if (window.confirm(message)) { try { await api.del(`/programs/${program.id}`); refresh(); setError(null); } catch (err) { setError(err); } } }}>Remove</Button></div>
+            </div>
           </article>
         ))}
       </div>

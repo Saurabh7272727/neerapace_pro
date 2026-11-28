@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { OTP_COOLDOWN_SECONDS, OTP_MAX_ATTEMPTS, OTP_TTL_SECONDS } from "@neerapace/shared";
 import { env } from "../config/env.js";
-import { cacheDel, cacheGet, cacheSet, getJson, putJson } from "../config/redis.js";
+import { cacheGet, cacheSet, cacheVerifyAndConsumeOtp, putJson } from "../config/redis.js";
 import { ApiError } from "./ApiError.js";
 
 export function generateOtp() {
@@ -37,16 +37,8 @@ export async function issueOtp(email, purpose) {
 
 export async function checkOtp(email, purpose, otp) {
   const key = otpKey(purpose, email);
-  const record = await getJson(key);
-  if (!record) throw new ApiError(400, "OTP_INVALID", "That code is invalid or has expired");
-  if (record.attempts >= OTP_MAX_ATTEMPTS) {
-    throw new ApiError(429, "OTP_LOCKED", "Too many attempts. Request a new code");
-  }
-  if (!otpMatches(otp, record.hash)) {
-    record.attempts += 1;
-    await putJson(key, record, OTP_TTL_SECONDS);
-    throw new ApiError(400, "OTP_INVALID", "That code is invalid or has expired");
-  }
-  await cacheDel(key);
+  const result = await cacheVerifyAndConsumeOtp(key, hashOtp(otp), OTP_MAX_ATTEMPTS);
+  if (result === -1) throw new ApiError(429, "OTP_LOCKED", "Too many attempts. Request a new code");
+  if (result !== 2) throw new ApiError(400, "OTP_INVALID", "That code is invalid or has expired");
   return true;
 }

@@ -3,7 +3,7 @@ import { formatRegistrationId } from "@neerapace/shared";
 import { cacheDel } from "../../config/redis.js";
 import { cacheKeys } from "../../config/cacheKeys.js";
 import { publish } from "../../jobs/publish.js";
-import { Batch, Counter, Program, StudentProfile, User } from "../../models/index.js";
+import { Attendance, Batch, Conversation, ConversationParticipant, Counter, Enquiry, JobOutbox, Message, Notification, Program, StudentProfile, User } from "../../models/index.js";
 import { recordAudit } from "../../utils/audit.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { pageQuery } from "../../utils/http.js";
@@ -151,18 +151,58 @@ export async function removeStudent(actor, userId) {
   const profile = await StudentProfile.findOne({ userId });
   const user = await User.findOne({ _id: userId, role: "student", deletedAt: null });
   if (!user) throw new ApiError(404, "NOT_FOUND", "Student not found");
-  const previousBatch = profile?.batchId;
-  user.deletedAt = new Date();
+
+  // Revoke access first so a partial cleanup can never leave a usable account.
   user.status = "suspended";
   user.authVersion = (user.authVersion || 0) + 1;
   await user.save();
   disconnectUserSockets(user.id);
+
+  const previousBatch = profile?.batchId;
   if (profile?.batchId) {
     profile.batchId = null;
     await profile.save();
     await syncBatchConversation(previousBatch);
   }
-  await cacheDel(cacheKeys.stats);
+
+  const directConversations = await Conversation.find({ type: "direct", participantIds: user._id }).select("_id");
+  const directConversationIds = directConversations.map((conversation) => conversation._id);
+  const authoredMessages = await Message.find({ senderId: user._id }).select("conversationId");
+  const affectedConversationIds = [...new Set(authoredMessages
+    .map((message) => String(message.conversationId))
+    .filter((id) => !directConversationIds.some((directId) => String(directId) === id)))];
+
+  await Promise.all([
+    StudentProfile.deleteOne({ userId: user._id }),
+    Attendance.deleteMany({ $or: [{ studentId: user._id }, { markedBy: user._id }] }),
+    Notification.deleteMany({ userId: user._id }),
+    Enquiry.deleteMany({ email: user.email }),
+    ConversationParticipant.deleteMany({ userId: user._id }),
+    Conversation.updateMany({ participantIds: user._id }, { $pull: { participantIds: user._id } }),
+    Message.deleteMany({ $or: [{ senderId: user._id }, { conversationId: { $in: directConversationIds } }] }),
+    Conversation.deleteMany({ _id: { $in: directConversationIds } }),
+    JobOutbox.deleteMany({ "data.email": user.email }),
+    cacheDel(
+      `otp:verify:${user.email}`,
+      `otp:reset:${user.email}`,
+      `otp:cooldown:verify:${user.email}`,
+      `otp:cooldown:reset:${user.email}`,
+    ),
+    cacheDel(cacheKeys.stats),
+  ]);
+
+  // Keep batch conversations usable and remove deleted messages from previews.
+  for (const conversationId of affectedConversationIds) {
+    const latestMessage = await Message.findOne({ conversationId }).sort({ createdAt: -1 });
+    await Conversation.updateOne({ _id: conversationId }, {
+      $set: {
+        lastMessageAt: latestMessage?.createdAt || null,
+        lastMessagePreview: latestMessage ? (latestMessage.body || "Sent an image").slice(0, 140) : "",
+      },
+    });
+  }
+
   await recordAudit(actor.id, "student.delete", String(userId), {});
+  await User.deleteOne({ _id: user._id });
   return { ok: true };
 }

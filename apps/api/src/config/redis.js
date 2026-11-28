@@ -67,6 +67,44 @@ export async function cacheGetDel(key) {
   return value;
 }
 
+// Atomically count OTP failures and consume a matching code. Keeping this in
+// the shared cache prevents parallel requests from bypassing the attempt cap.
+export async function cacheVerifyAndConsumeOtp(key, candidateHash, maxAttempts) {
+  if (mode === "redis" && client) {
+    return Number(await client.eval(
+      `local raw = redis.call('GET', KEYS[1]);
+      if not raw then return 0 end
+      local record = cjson.decode(raw)
+      if record.attempts >= tonumber(ARGV[2]) then return -1 end
+      if record.hash ~= ARGV[1] then
+        record.attempts = record.attempts + 1
+        local ttl = redis.call('PTTL', KEYS[1])
+        if ttl >= 0 then redis.call('SET', KEYS[1], cjson.encode(record), 'PX', math.max(ttl, 1)) else redis.call('SET', KEYS[1], cjson.encode(record)) end
+        return 1
+      end
+      redis.call('DEL', KEYS[1])
+      return 2`,
+      1,
+      key,
+      candidateHash,
+      maxAttempts,
+    ));
+  }
+
+  const raw = readMemory(key);
+  if (!raw) return 0;
+  const record = JSON.parse(raw);
+  if (record.attempts >= maxAttempts) return -1;
+  if (record.hash !== candidateHash) {
+    record.attempts += 1;
+    const row = memory.get(key);
+    memory.set(key, { ...row, value: JSON.stringify(record) });
+    return 1;
+  }
+  memory.delete(key);
+  return 2;
+}
+
 export async function cacheSet(key, value, ttlSeconds) {
   if (mode === "redis" && client) {
     await client.set(key, value, "EX", ttlSeconds);

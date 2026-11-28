@@ -678,7 +678,7 @@ export default function App() {
                     </div>
                 </div>
 
-                <ProgramsPage />
+                <ProgramsPage showHeading={false} />
             </section>
 
             {/* =====================================================================
@@ -861,7 +861,7 @@ export default function App() {
                                                 <span>Peak Delivery</span>
                                                 <Icons.Award className="w-4 h-4 text-[#10B981]" />
                                             </div>
-                                            <p className="text-2xl font-bold text-[#F8FAFC] mt-2">132 km/h</p>
+                                            <p className="text-2xl font-bold text-[#F8FAFC] mt-2">145 km/h</p>
                                             <p className="text-xs text-[#94A3B8] mt-1">Up from 118 km/h in July</p>
                                         </div>
                                     </div>

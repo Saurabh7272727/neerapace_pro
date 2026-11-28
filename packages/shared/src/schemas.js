@@ -90,6 +90,7 @@ export const programSchema = z.object({
   ageGroup: z.string().trim().min(1).max(40),
   scheduleSummary: z.string().trim().min(1).max(200),
   imageUrl: optionalHttpsUrl.optional().default(""),
+  imagePublicId: z.string().max(200).regex(/^$|^neerapace\/programs\/[A-Za-z0-9_-]+$/, "Choose an image uploaded to the academy programs folder").optional().default(""),
   isPublished: z.boolean().optional().default(true),
   sortOrder: z.coerce.number().int().min(0).max(999).optional().default(0),
 });

@@ -5,6 +5,7 @@ import { ApiError } from "../../utils/ApiError.js";
 import { presentProgram } from "../../utils/presenters.js";
 import { sanitizePlain, sanitizeRichText } from "../../utils/sanitize.js";
 import { pageQuery } from "../../utils/http.js";
+import { deleteAcademyImage } from "../../utils/cloudinaryAssets.js";
 
 function presentPage(page) {
   return {
@@ -77,8 +78,10 @@ export async function updateProgram(id, input) {
 }
 
 export async function removeProgram(id) {
-  const program = await Program.findByIdAndDelete(id);
+  const program = await Program.findById(id);
   if (!program) throw new ApiError(404, "NOT_FOUND", "Program not found");
+  await deleteAcademyImage(program.imagePublicId, "programs");
+  await Program.deleteOne({ _id: program._id });
   await cacheDel(cacheKeys.programs);
   return { ok: true };
 }
@@ -125,8 +128,10 @@ export async function updateGalleryItem(id, input) {
 }
 
 export async function removeGalleryItem(id) {
-  const item = await GalleryItem.findByIdAndDelete(id);
+  const item = await GalleryItem.findById(id);
   if (!item) throw new ApiError(404, "NOT_FOUND", "Gallery item not found");
+  await deleteAcademyImage(item.publicId, "gallery");
+  await GalleryItem.deleteOne({ _id: item._id });
   await cacheDel(cacheKeys.gallery);
   return { ok: true, publicId: item.publicId || "" };
 }
@@ -194,8 +199,10 @@ export async function updateBanner(id, input) {
 }
 
 export async function removeBanner(id) {
-  const item = await Banner.findByIdAndDelete(id);
+  const item = await Banner.findById(id);
   if (!item) throw new ApiError(404, "NOT_FOUND", "Banner not found");
+  await deleteAcademyImage(item.publicId, "banners");
+  await Banner.deleteOne({ _id: item._id });
   await cacheDel(cacheKeys.banners);
   return { ok: true, publicId: item.publicId || "" };
 }

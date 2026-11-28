@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
  */
 const PRIMARY_SQUAD_PHOTO = {
     id: 'squad-master-2026',
-    title: 'SRF team',
+    title: 'MRF Sarfaraz in MRF',
     subtitle: '2026 High-Performance Cricket Team',
     category: 'Cricket Team',
     date: 'Season 2018',
@@ -51,10 +51,10 @@ const INITIAL_GALLERY_ITEMS = [
     },
     {
         id: 'moment-03',
-        title: '2023 Jharkhand team players',
+        title: 'Amit Kumar with 2023 Jharkhand team players',
         category: 'Match Days',
         date: 'Nov 2026',
-        telemetry: '2023 Ranji Trophy',
+        telemetry: 'Vijay Hazare Trophy',
         location: 'M.S. DHONI PAVILION',
         bentoSpan: 'standard',
         filename: 'neerapace-outswing-release.webp',

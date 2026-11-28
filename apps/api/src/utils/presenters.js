@@ -19,6 +19,7 @@ export function presentProgram(program) {
     ageGroup: program.ageGroup,
     scheduleSummary: program.scheduleSummary,
     imageUrl: program.imageUrl || "",
+    imagePublicId: program.imagePublicId || "",
     isPublished: program.isPublished,
     sortOrder: program.sortOrder,
   };

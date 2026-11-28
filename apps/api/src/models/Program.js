@@ -7,6 +7,7 @@ const programSchema = new mongoose.Schema(
     ageGroup: { type: String, required: true },
     scheduleSummary: { type: String, required: true },
     imageUrl: { type: String, default: "" },
+    imagePublicId: { type: String, default: "" },
     isPublished: { type: Boolean, default: true, index: true },
     sortOrder: { type: Number, default: 0 },
   },

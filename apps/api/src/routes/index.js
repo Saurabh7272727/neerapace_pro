@@ -300,7 +300,7 @@ router.post("/uploads", requireAuth, uploadLimit, (req, res, next) => {
 }, asyncHandler(async (req, res) => {
   const folder = String(req.body?.folder || "");
   if (!UPLOAD_FOLDERS.includes(folder)) throw new ApiError(400, "UPLOAD", "Choose a valid image folder");
-  if ((folder === "gallery" || folder === "banners" || folder === "content") && req.user.role !== "admin") {
+  if ((folder === "gallery" || folder === "banners" || folder === "programs" || folder === "content") && req.user.role !== "admin") {
     throw new ApiError(403, "FORBIDDEN", "You cannot upload to that folder");
   }
   if (folder === "chat" && req.user.status !== "active") throw new ApiError(403, "ACCOUNT_INACTIVE", "Chat uploads require an active account");

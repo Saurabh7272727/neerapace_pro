@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { forgotSchema, loginSchema, registerSchema, resetSchema, verifyOtpSchema } from "@neerapace/shared";
@@ -78,6 +79,7 @@ export function LoginPage() {
     }
   }
   return (
+    <>
     <AuthShell title="Sign in" description="Players, coaches and the office use the same door.">
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field label="Email" error={errors.email}><input className={inputClass} name="email" type="email" autoComplete="username" /></Field>
@@ -89,6 +91,19 @@ export function LoginPage() {
       </form>
       <GoogleSignIn />
     </AuthShell>
+    {error?.code === "EMAIL_UNVERIFIED" && typeof document !== "undefined" ? createPortal(
+      <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4" role="alert" aria-live="assertive">
+        <div className="pointer-events-auto w-full max-w-xl rounded-2xl border border-amber-200 bg-white/95 p-4 shadow-2xl shadow-pitch/20 backdrop-blur sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
+          <div className="min-w-0">
+            <p className="font-semibold text-pitch">Confirm your email to continue</p>
+            <p className="mt-1 text-sm leading-5 text-ink/70">This account is still waiting for email verification. Enter your code, or contact the academy if you need help.</p>
+          </div>
+          <Link className="mt-3 inline-flex shrink-0 items-center justify-center rounded-full bg-pitch px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fairway sm:mt-0" to="/contact">Send an enquiry</Link>
+        </div>
+      </div>,
+      document.body,
+    ) : null}
+    </>
   );
 }
 

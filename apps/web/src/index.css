@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-serif: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-pitch: #12372a;
   --color-pitch-dark: #0c241c;
@@ -12,6 +12,53 @@
   --color-clay: #9a4630;
   --color-ink: #1c241f;
   --color-line: #e4dccb;
+  --color-surface: #F3F5F8;
+}
+
+:root {
+  --bg-surface: #F3F5F8;
+  --display-primary: #111827;
+  --display-muted: #4B5563;
+}
+
+@layer base {
+
+  html,
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  .h1 {
+    color: var(--display-primary);
+    font-family: var(--font-sans);
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+  }
+}
+
+@layer components {
+
+  .display-heading,
+  .heading-duo {
+    color: var(--display-primary);
+    font-family: var(--font-sans);
+    font-size: clamp(2.25rem, 5vw, 3.75rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+  }
+
+  .display-sub,
+  .heading-duo-muted {
+    display: block;
+    color: var(--display-muted);
+    font-weight: 500;
+  }
 }
 
 * {
@@ -25,8 +72,8 @@ html {
 body {
   margin: 0;
   background:
-    radial-gradient(circle at 85% 8%, rgba(198, 161, 91, 0.12), transparent 22rem),
-    linear-gradient(135deg, #f7f3e8 0%, #eee8d8 100%);
+    radial-gradient(circle at 85% 8%, rgba(198, 161, 91, 0.08), transparent 22rem),
+    var(--bg-surface);
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
@@ -51,6 +98,111 @@ button:disabled {
   -webkit-backdrop-filter: blur(18px);
 }
 
+.public-header {
+  isolation: isolate;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .96), rgba(243, 245, 248, .88));
+  box-shadow: 0 8px 28px rgba(17, 24, 39, .07);
+}
+
+.public-header::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(198, 161, 91, .7), rgba(31, 107, 74, .36), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.public-nav-link {
+  text-shadow: 0 0 0 transparent;
+}
+
+.public-nav-link:hover {
+  text-shadow: 0 0 16px rgba(198, 161, 91, .35);
+}
+
+.public-nav-link-active {
+  background: linear-gradient(135deg, #1f6b4a, #12372a);
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(18, 55, 42, .2), inset 0 1px rgba(255, 255, 255, .2);
+  text-shadow: 0 0 12px rgba(255, 226, 160, .32);
+}
+
+.nav-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.nav-cta::after {
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: -65%;
+  width: 42%;
+  transform: skewX(-22deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .58), transparent);
+  content: "";
+  opacity: 0;
+  transition: left 550ms ease, opacity 180ms ease;
+  pointer-events: none;
+}
+
+.nav-cta:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.08);
+}
+
+.nav-cta:hover::after {
+  left: 125%;
+  opacity: .8;
+}
+
+.nav-cta-gold {
+  background: linear-gradient(135deg, #f4d78f, #c6a15b);
+  box-shadow: 0 8px 20px rgba(198, 161, 91, .28), inset 0 1px rgba(255, 255, 255, .62);
+}
+
+.nav-cta-dark {
+  background: linear-gradient(135deg, #26734f, #12372a);
+  box-shadow: 0 8px 20px rgba(18, 55, 42, .2), inset 0 1px rgba(255, 255, 255, .2);
+}
+
+.mobile-menu-toggle {
+  border: 1px solid rgba(18, 55, 42, .13);
+  background: linear-gradient(145deg, #fff, #edf2f5);
+  box-shadow: 0 5px 16px rgba(17, 24, 39, .09), inset 0 1px rgba(255, 255, 255, .9);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.mobile-menu-toggle:hover {
+  transform: translateY(-1px);
+  border-color: rgba(198, 161, 91, .6);
+  box-shadow: 0 8px 20px rgba(18, 55, 42, .13), 0 0 14px rgba(198, 161, 91, .16);
+}
+
+.mobile-nav-panel {
+  border-left: 1px solid rgba(255, 255, 255, .85);
+  background: linear-gradient(155deg, #fff 0%, var(--bg-surface) 58%, #eaf0f4 100%);
+  backdrop-filter: blur(24px);
+}
+
+.mobile-nav-link {
+  border: 1px solid transparent;
+}
+
+.mobile-nav-link-active {
+  border-color: rgba(198, 161, 91, .44);
+  background: linear-gradient(115deg, #174a36, #12372a 72%, #1b563c);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(18, 55, 42, .15), inset 0 1px rgba(255, 255, 255, .15);
+}
+
 .demo-content {
   min-width: 0;
 }
@@ -59,6 +211,81 @@ button:disabled {
   background:
     radial-gradient(circle at 78% 42%, rgba(198, 161, 91, 0.24), transparent 13rem),
     linear-gradient(135deg, rgba(18, 55, 42, 0.98), rgba(8, 31, 23, 0.99));
+}
+
+.home-hero-title {
+  color: #fff;
+  text-shadow: 0 2px 18px rgba(255, 255, 255, .22), 0 8px 32px rgba(198, 161, 91, .2);
+}
+
+.home-hero-kicker {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(244, 215, 143, .5);
+  background: linear-gradient(110deg, rgba(198, 161, 91, .2), rgba(255, 239, 198, .12) 48%, rgba(198, 161, 91, .2));
+  color: #ffe7ae;
+  box-shadow: 0 0 0 1px rgba(255, 231, 174, .07), 0 0 24px rgba(198, 161, 91, .18), inset 0 1px rgba(255, 255, 255, .16);
+  text-shadow: 0 0 16px rgba(255, 218, 139, .35);
+  backdrop-filter: blur(10px);
+}
+
+.home-hero-kicker::after {
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -45%;
+  width: 32%;
+  transform: skewX(-24deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .32), transparent);
+  content: "";
+  animation: kicker-shine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.home-hero-kicker-dot {
+  box-shadow: 0 0 10px rgba(255, 223, 150, .8);
+  animation: kicker-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes kicker-shine {
+
+  0%,
+  72%,
+  100% {
+    left: -45%;
+    opacity: 0;
+  }
+
+  78% {
+    opacity: .9;
+  }
+
+  92% {
+    left: 125%;
+    opacity: 0;
+  }
+}
+
+@keyframes kicker-pulse {
+
+  0%,
+  100% {
+    opacity: .75;
+    transform: scale(.9);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .home-hero-kicker::after,
+  .home-hero-kicker-dot {
+    animation: none;
+  }
 }
 
 .card-lift {
@@ -221,4 +448,101 @@ textarea {
   .auth-shell {
     padding-inline: 24px;
   }
+}
+
+
+/* Hide horizontal scrollbar while keeping touch swipe smooth */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Staggered card entrance animation */
+@keyframes npCardReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.np-offer-card {
+  animation: npCardReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--stagger, 0ms);
+}
+
+/* Subtle metallic light sheen on card hover */
+.np-offer-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.28) 50%,
+      transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.np-offer-card:hover::after {
+  transform: translateX(120%);
+}
+
+/* Mobile horizontal scroll-driven card pop (modern browsers) */
+@media (max-width: 767px) {
+  .np-mobile-carousel {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @supports (animation-timeline: view()) {
+    @keyframes npHorizontalFocus {
+      0% {
+        transform: scale(0.94);
+        opacity: 0.72;
+      }
+
+      50% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(0.94);
+        opacity: 0.72;
+      }
+    }
+
+    .np-mobile-carousel .np-offer-card {
+      animation: npHorizontalFocus linear both;
+      animation-timeline: view(inline);
+      animation-range: cover 0% cover 100%;
+    }
+  }
+}
+
+/* Swipe indicator subtle horizontal bounce */
+@keyframes bounceX {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-bounce-x {
+  animation: bounceX 1.4s ease-in-out infinite;
 }

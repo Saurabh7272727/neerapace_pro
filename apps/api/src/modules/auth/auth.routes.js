@@ -80,7 +80,9 @@ router.post("/forgot-password", otpLimit, validateBody(forgotSchema), asyncHandl
 }));
 
 router.post("/reset-password", otpLimit, validateBody(resetSchema), asyncHandler(async (req, res) => {
-  res.json({ data: await auth.resetPassword(req.body) });
+  const result = await auth.resetPassword(req.body);
+  clearAuthCookies(res);
+  res.json({ data: result });
 }));
 
 router.get("/me", requireAuth, asyncHandler(async (req, res) => {

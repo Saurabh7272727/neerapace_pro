@@ -21,14 +21,14 @@ export function HomePage() {
       <PageTitle title="Home" description="Neera Pace Cricket Academy trains age-group and adult squads." />
       <section className="hero-grid relative overflow-hidden text-cream">
         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.07) 1px, transparent 1px)", backgroundSize: "44px 44px" }} />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:py-20 lg:grid-cols-[1.08fr_.92fr] lg:gap-12 lg:px-8 lg:py-28">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-xs uppercase tracking-[0.22em] text-gold"><span className="h-1.5 w-1.5 rounded-full bg-gold" />Season 2026</div>
-            <h1 className="mt-7 font-serif text-5xl leading-[1.02] md:text-7xl">{page.data?.heroTitle || "From the first grip to match day."}</h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-cream/75">{page.data?.heroSubtitle || "Small squads. Honest coaching. A clear path from net session to match performance."}</p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link to="/register" className="rounded-full bg-gold px-6 py-3.5 text-sm font-semibold text-pitch shadow-xl shadow-gold/20 transition hover:-translate-y-1">Start a registration</Link>
-              <Link to="/programs" className="rounded-full border border-cream/25 bg-white/5 px-6 py-3.5 text-sm font-medium backdrop-blur transition hover:border-gold/60">Explore programs</Link>
+        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-9 sm:gap-10 sm:px-5 sm:py-16 lg:grid-cols-[1.08fr_.92fr] lg:gap-12 lg:px-8 lg:py-28">
+          <div className="max-w-2xl sm:pt-2 lg:pt-8">
+            <div className="home-hero-kicker inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.2em] sm:px-4 sm:text-xs sm:tracking-[0.22em]"><span aria-hidden="true" className="home-hero-kicker-dot h-1.5 w-1.5 rounded-full bg-gold" />Road to India</div>
+            <h1 className="home-hero-title mt-5 max-w-[15ch] font-serif text-[clamp(2.65rem,11vw,3.55rem)] leading-[0.98] text-white sm:mt-7 sm:text-5xl sm:leading-[1.02] md:text-7xl">{page.data?.heroTitle || "From the first grip to match day."}</h1>
+            <p className="mt-4 max-w-xl text-base leading-7 text-cream/75 sm:mt-6 sm:text-lg sm:leading-8">{page.data?.heroSubtitle || "Small squads. Honest coaching. A clear path from net session to match performance."}</p>
+            <div className="mt-6 grid gap-2.5 sm:mt-9 sm:flex sm:flex-wrap sm:gap-3">
+              <Link to="/register" className="flex w-full items-center justify-center rounded-full bg-gold px-6 py-3.5 text-sm font-semibold text-pitch shadow-xl shadow-gold/20 transition hover:-translate-y-1 sm:w-auto">Start a registration</Link>
+              <Link to="/programs" className="flex w-full items-center justify-center rounded-full border border-cream/25 bg-white/5 px-6 py-3.5 text-sm font-medium backdrop-blur transition hover:border-gold/60 sm:w-auto">Explore programs</Link>
             </div>
           </div>
           <div className="relative min-w-0">
@@ -80,8 +80,14 @@ export function StoryPage({ slug }) {
     </article>
   );
 }
+const COMMON_ACADEMY_PERKS = [
+  "Turf & Astro Net Practice",
+  "Bowling Machine Drills",
+  "1-on-1 Coach Video Review",
+  "Weekly Match Simulation",
+];
 
-export function ProgramsPage() {
+export function ProgramsPage({ showHeading = true }) {
   const page = usePage("programs");
   const programs = useQuery({
     queryKey: ["programs"],
@@ -89,46 +95,92 @@ export function ProgramsPage() {
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
-    retry: 1,
+    retry: 2,
   });
 
-  return (
-    <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-      <PageTitle
-        title="Programs"
-        description="Age-group and adult cricket programs at Neera Pace."
-      />
+  const programList = programs.data || [];
 
-      {/* Editorial Header */}
-      <header className="max-w-2xl border-b border-line pb-8">
-        <h1 className="font-serif text-4xl tracking-tight text-pitch sm:text-5xl">
-          {page.data?.heroTitle || "Programs"}
-        </h1>
-        {page.data?.heroSubtitle ? (
-          <p className="mt-3 text-base leading-relaxed text-ink/75 sm:text-lg">
-            {page.data.heroSubtitle}
-          </p>
+  return (
+    <section className={`np-programs-scope mx-auto max-w-6xl px-4 lg:px-8 ${showHeading ? "py-12 sm:px-6 sm:py-16" : "pb-0 pt-0"}`}>
+      {showHeading ? (
+        <PageTitle
+          title="Programs"
+          description="Age-group and adult cricket programs at Neera Pace."
+        />
+      ) : null}
+
+      {/* Editorial Offer Header */}
+      {showHeading ? <header className="relative flex flex-col justify-between gap-5 border-b border-line pb-8 md:flex-row md:items-end">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-pitch/20 bg-pitch/[0.04] px-3.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-pitch">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-fairway" />
+            Official Training Batches
+          </div>
+
+          <h1 className="mt-4 font-serif text-4xl tracking-tight text-pitch sm:text-5xl">
+            {page.data?.heroTitle || "Programs"}
+          </h1>
+
+          {page.data?.heroSubtitle ? (
+            <p className="mt-3 text-base leading-relaxed text-ink/75 sm:text-lg">
+              {page.data.heroSubtitle}
+            </p>
+          ) : null}
+        </div>
+
+        {/* Mobile Swipe Hint + Desktop Batch Counter */}
+        {!programs.isLoading && programList.length > 0 ? (
+          <div className="flex items-center gap-3 self-start md:self-end">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3.5 py-1.5 text-xs font-medium text-ink/70 md:hidden">
+              Swipe batches
+              <svg
+                className="h-3.5 w-3.5 animate-bounce-x text-fairway"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
+            </span>
+
+            <span className="hidden rounded-full border border-line bg-paper px-4 py-1.5 text-xs font-semibold tracking-wide text-pitch md:inline-flex">
+              {programList.length}{" "}
+              {programList.length === 1 ? "Program Available" : "Programs Available"}
+            </span>
+          </div>
         ) : null}
-      </header>
+      </header> : null}
 
       {/* Onboarding / Request Skeleton Loading */}
       {programs.isLoading ? (
         <div
           aria-busy="true"
-          className="mt-10 grid gap-6 sm:gap-8 md:grid-cols-2"
+          className={`${showHeading ? "mt-10" : "mt-0"} flex snap-x snap-mandatory gap-5 overflow-x-auto pb-4 no-scrollbar md:grid md:grid-cols-2 md:gap-8 md:overflow-visible md:pb-0`}
         >
           {Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
-              className="flex flex-col overflow-hidden rounded-3xl border border-line bg-paper"
+              className="flex w-[86vw] max-w-[380px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-line bg-paper md:w-auto md:max-w-none"
             >
-              <div className="h-48 w-full animate-pulse bg-ink/5 sm:h-52" />
-              <div className="flex flex-1 flex-col p-6">
+              <div className="h-52 w-full animate-pulse bg-ink/5" />
+              <div className="flex flex-1 flex-col p-6 sm:p-7">
                 <div className="h-6 w-24 animate-pulse rounded-full bg-ink/10" />
                 <div className="mt-4 h-8 w-3/4 animate-pulse rounded-lg bg-ink/10" />
                 <div className="mt-3 space-y-2">
                   <div className="h-3.5 w-full animate-pulse rounded bg-ink/5" />
                   <div className="h-3.5 w-5/6 animate-pulse rounded bg-ink/5" />
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-2 border-t border-line/70 pt-4">
+                  <div className="h-3.5 animate-pulse rounded bg-ink/5" />
+                  <div className="h-3.5 animate-pulse rounded bg-ink/5" />
+                  <div className="h-3.5 animate-pulse rounded bg-ink/5" />
+                  <div className="h-3.5 animate-pulse rounded bg-ink/5" />
                 </div>
                 <div className="mt-5 border-t border-line pt-4">
                   <div className="h-4 w-1/2 animate-pulse rounded bg-ink/10" />
@@ -139,42 +191,126 @@ export function ProgramsPage() {
         </div>
       ) : null}
 
-      {/* Programs Grid — Exact Original Properties Only */}
+      {/* Premium Offer Showcase: Horizontal Animated Track on Mobile, 2-Col Grid on Desktop */}
       {!programs.isLoading ? (
-        <div className="mt-10 grid gap-6 sm:gap-8 md:grid-cols-2">
-          {(programs.data || []).map((program) => (
+        <div className={`np-mobile-carousel -mx-4 ${showHeading ? "mt-10" : "mt-0"} flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-6 pt-2 no-scrollbar md:mx-0 md:grid md:grid-cols-2 md:gap-8 md:overflow-visible md:px-0 md:pb-0 md:pt-0`}>
+          {programList.map((program, index) => (
             <article
               key={program.id}
-              className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-paper transition-all duration-300 hover:-translate-y-1 hover:border-pitch/40 hover:shadow-md"
+              style={{ "--stagger": `${index * 90}ms` }}
+              className="np-offer-card group relative flex w-[86vw] max-w-[390px] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-line bg-paper transition-all duration-500 ease-out hover:-translate-y-1.5 hover:border-pitch/45 hover:shadow-[0_22px_45px_-15px_rgba(20,83,45,0.16)] md:w-auto md:max-w-none"
             >
+              {/* Subtle Top Offer Accent Bar */}
+              <div className="h-1 w-full bg-gradient-to-r from-pitch via-fairway to-amber-400 opacity-85 transition-opacity duration-300 group-hover:opacity-100" />
+
+              {/* Cover Media with Floating Age-Group Badge */}
               {program.imageUrl ? (
-                <div className="relative h-48 w-full overflow-hidden bg-ink/5 sm:h-52">
+                <div className="relative h-52 w-full overflow-hidden bg-ink/5 sm:h-56">
                   <img
                     src={imageUrl(program.imageUrl, 800)}
-                    alt=""
-                    className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                    alt={`${program.name} training program`}
+                    className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     loading="lazy"
                     decoding="async"
                   />
-                </div>
-              ) : null}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
 
-              <div className="flex flex-1 flex-col p-6">
-                <div>
+                  <div className="absolute top-4 left-4 flex items-center gap-2">
+                    <span className="rounded-full bg-paper/95 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-pitch shadow-sm backdrop-blur-md">
+                      Batch 0{index + 1}
+                    </span>
+                    <Badge tone="gold">{program.ageGroup}</Badge>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-6 pt-6 sm:px-7">
+                  <span className="rounded-full border border-line bg-ink/[0.03] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-pitch">
+                    Batch 0{index + 1}
+                  </span>
                   <Badge tone="gold">{program.ageGroup}</Badge>
                 </div>
+              )}
 
-                <h2 className="mt-3 font-serif text-2xl leading-snug text-pitch transition-colors group-hover:text-fairway sm:text-3xl">
+              {/* Offer Card Body */}
+              <div className="flex flex-1 flex-col p-6 sm:p-7">
+                <h2 className="font-serif text-2xl leading-snug text-pitch transition-colors duration-300 group-hover:text-fairway sm:text-3xl">
                   {program.name}
                 </h2>
 
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-ink/80">
+                <p className="mt-2.5 flex-1 text-sm leading-relaxed text-ink/80 sm:text-[15px]">
                   {program.description}
                 </p>
 
-                <p className="mt-5 border-t border-line pt-4 text-sm font-medium text-fairway">
-                  {program.scheduleSummary}
-                </p>
+                {/* Common Cricket Academy Inclusions */}
+                <div className="mt-5 rounded-2xl border border-line/80 bg-ink/[0.02] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-ink/55">
+                    Included In Every Session
+                  </p>
+                  <ul className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {COMMON_ACADEMY_PERKS.map((perk) => (
+                      <li
+                        key={perk}
+                        className="flex items-center gap-2 text-xs font-medium text-ink/85"
+                      >
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-fairway/15 text-fairway">
+                          <svg
+                            className="h-2.5 w-2.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </span>
+                        <span>{perk}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Schedule Footer */}
+                <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-fairway">
+                    <svg
+                      className="h-4 w-4 shrink-0 text-fairway"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span>{program.scheduleSummary}</span>
+                  </div>
+
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-line text-pitch transition-all duration-300 group-hover:border-pitch group-hover:bg-pitch group-hover:text-paper">
+                    <svg
+                      className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </span>
+                </div>
               </div>
             </article>
           ))}
@@ -183,6 +319,7 @@ export function ProgramsPage() {
     </section>
   );
 }
+
 
 export function CoachesPage() {
   const page = usePage("coaches");

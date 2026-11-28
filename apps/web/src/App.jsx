@@ -12,6 +12,7 @@ import { AdmissionsPage } from "./features/manage/AdmissionsPage.jsx";
 import { NotificationsPage } from "./features/notifications/NotificationsPage.jsx";
 import { ProfilePage } from "./features/profile/ProfilePage.jsx";
 import { CoachesPage, ContactPage, GalleryPage, HomePage, ProgramsPage, StoryPage } from "./features/public/PublicPages.jsx";
+import { FacilitiesPage } from "./features/public/FacilitiesPage.jsx";
 import { GlobalLoading } from "./components/GlobalLoading.jsx";
 
 export function App() {
@@ -25,7 +26,7 @@ export function App() {
           <Route path="about" element={<StoryPage slug="about" />} />
           <Route path="programs" element={<ProgramsPage />} />
           <Route path="coaches" element={<CoachesPage />} />
-          <Route path="facilities" element={<StoryPage slug="facilities" />} />
+          <Route path="facilities" element={<FacilitiesPage />} />
           <Route path="gallery" element={<GalleryPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="register" element={<RegisterPage />} />

@@ -41,7 +41,7 @@ export function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-cream md:grid" style={{ gridTemplateColumns: collapsed ? "88px 1fr" : "240px 1fr" }}>
-      <aside className="hidden border-r border-line bg-pitch text-cream md:block md:min-h-screen">
+      <aside className="sticky top-0 hidden h-screen self-start overflow-y-auto border-r border-line bg-pitch text-cream md:block">
         <div className="flex items-center justify-between px-4 py-4">
           <Link to="/" className="font-serif text-xl">{collapsed ? "NP" : "Neera Pace"}</Link>
           <button className="text-xs text-gold" type="button" onClick={() => dispatch(toggleNav())}>{collapsed ? "Open" : "Compact"}</button>
