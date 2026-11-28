@@ -10,6 +10,8 @@ const batchSchema = new mongoose.Schema(
     status: { type: String, enum: ["upcoming", "active", "completed"], default: "upcoming", index: true },
     startDate: { type: String, required: true },
     endDate: { type: String, required: true },
+    imageUrl: { type: String, default: "" },
+    imagePublicId: { type: String, default: "" },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true },

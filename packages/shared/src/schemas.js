@@ -104,6 +104,8 @@ export const coachCreateSchema = z.object({
   specialization: z.string().trim().max(120).optional().default(""),
   experienceYears: z.coerce.number().int().min(0).max(60).optional().default(0),
   isPublic: z.boolean().optional().default(true),
+  imageUrl: optionalHttpsUrl.optional().default(""),
+  imagePublicId: z.string().max(200).regex(/^$|^neerapace\/coaches\/[A-Za-z0-9_-]+$/, "Choose an image uploaded to the academy coaches folder").optional().default(""),
 });
 
 export const coachUpdateSchema = coachCreateSchema.partial().omit({ password: true, email: true });
@@ -117,6 +119,8 @@ export const batchSchema = z
     status: z.enum(BATCH_STATUSES).optional().default("upcoming"),
     startDate: dateSchema,
     endDate: dateSchema,
+    imageUrl: optionalHttpsUrl.optional().default(""),
+    imagePublicId: z.string().max(200).regex(/^$|^neerapace\/batches\/[A-Za-z0-9_-]+$/, "Choose an image uploaded to the academy batches folder").optional().default(""),
   })
   .refine((value) => value.endDate >= value.startDate, {
     message: "End date must be on or after the start date",
@@ -125,6 +129,10 @@ export const batchSchema = z
 
 export const assignUserSchema = z.object({
   userId: objectIdSchema,
+});
+
+export const assignUsersSchema = z.object({
+  userIds: z.array(objectIdSchema).min(1).max(200),
 });
 
 export const attendanceMarkSchema = z.object({

@@ -7,6 +7,8 @@ const coachSchema = new mongoose.Schema(
     specialization: { type: String, default: "" },
     experienceYears: { type: Number, default: 0 },
     isPublic: { type: Boolean, default: true },
+    imageUrl: { type: String, default: "" },
+    imagePublicId: { type: String, default: "" },
   },
   { timestamps: true },
 );

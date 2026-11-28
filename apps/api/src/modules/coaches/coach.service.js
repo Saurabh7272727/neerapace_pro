@@ -7,6 +7,7 @@ import { ApiError } from "../../utils/ApiError.js";
 import { presentCoach } from "../../utils/presenters.js";
 import { sanitizePlain } from "../../utils/sanitize.js";
 import { disconnectUserSockets } from "../../sockets/io.js";
+import { deleteAcademyImage } from "../../utils/cloudinaryAssets.js";
 
 const populate = { path: "userId", select: "name email phone status avatar deletedAt" };
 
@@ -41,6 +42,8 @@ export async function createCoach(actor, input) {
     specialization: sanitizePlain(input.specialization || ""),
     experienceYears: input.experienceYears || 0,
     isPublic: input.isPublic !== false,
+    imageUrl: input.imageUrl || "",
+    imagePublicId: input.imagePublicId || "",
   });
   await cacheDel(cacheKeys.coaches);
   await recordAudit(actor.id, "coach.create", String(user.id), {});
@@ -58,7 +61,13 @@ export async function updateCoach(actor, userId, input) {
   if (input.specialization !== undefined) profile.specialization = sanitizePlain(input.specialization);
   if (input.experienceYears !== undefined) profile.experienceYears = input.experienceYears;
   if (input.isPublic !== undefined) profile.isPublic = input.isPublic;
+  const previousImagePublicId = profile.imagePublicId;
+  if (input.imageUrl !== undefined) profile.imageUrl = input.imageUrl;
+  if (input.imagePublicId !== undefined) profile.imagePublicId = input.imagePublicId;
   await profile.save();
+  if (previousImagePublicId && previousImagePublicId !== profile.imagePublicId) {
+    await deleteAcademyImage(previousImagePublicId, "coaches");
+  }
   await cacheDel(cacheKeys.coaches);
   await recordAudit(actor.id, "coach.update", String(userId), {});
   return presentCoach(await CoachProfile.findOne({ userId }).populate(populate));
@@ -67,6 +76,8 @@ export async function updateCoach(actor, userId, input) {
 export async function removeCoach(actor, userId) {
   const user = await User.findOne({ _id: userId, role: "coach", deletedAt: null });
   if (!user) throw new ApiError(404, "NOT_FOUND", "Coach not found");
+  const profile = await CoachProfile.findOne({ userId });
+  if (profile?.imagePublicId) await deleteAcademyImage(profile.imagePublicId, "coaches");
   user.deletedAt = new Date();
   user.status = "suspended";
   user.authVersion = (user.authVersion || 0) + 1;

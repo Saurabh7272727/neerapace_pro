@@ -6,6 +6,7 @@ import { ApiError } from "../../utils/ApiError.js";
 import { presentBatch } from "../../utils/presenters.js";
 import { sanitizePlain } from "../../utils/sanitize.js";
 import { syncBatchConversation } from "../chat/chat.service.js";
+import { deleteAcademyImage } from "../../utils/cloudinaryAssets.js";
 
 async function withCounts(batches) {
   const ids = batches.map((batch) => batch.id || batch._id);
@@ -40,12 +41,17 @@ export async function createBatch(actor, input) {
 }
 
 export async function updateBatch(actor, id, input) {
+  const previousBatch = await Batch.findOne({ _id: id, deletedAt: null });
+  if (!previousBatch) throw new ApiError(404, "NOT_FOUND", "Batch not found");
   const batch = await Batch.findOneAndUpdate(
     { _id: id, deletedAt: null },
     { ...input, name: sanitizePlain(input.name), schedule: sanitizePlain(input.schedule) },
     { new: true },
   ).populate("programId", "name").populate("coachIds", "name");
   if (!batch) throw new ApiError(404, "NOT_FOUND", "Batch not found");
+  if (previousBatch.imagePublicId && previousBatch.imagePublicId !== batch.imagePublicId) {
+    await deleteAcademyImage(previousBatch.imagePublicId, "batches");
+  }
   await syncBatchConversation(batch.id);
   await cacheDel(cacheKeys.stats);
   await recordAudit(actor.id, "batch.update", String(id), {});
@@ -56,6 +62,7 @@ export async function removeBatch(actor, id) {
   const batch = await Batch.findOne({ _id: id, deletedAt: null });
   if (!batch) throw new ApiError(404, "NOT_FOUND", "Batch not found");
   batch.deletedAt = new Date();
+  if (batch.imagePublicId) await deleteAcademyImage(batch.imagePublicId, "batches");
   await batch.save();
   await StudentProfile.updateMany({ batchId: batch.id }, { batchId: null });
   await syncBatchConversation(batch.id);
@@ -103,6 +110,7 @@ export async function assignStudent(actor, batchId, userId) {
   await profile.save();
   if (previous && String(previous) !== String(batch.id)) await syncBatchConversation(previous);
   await syncBatchConversation(batch.id);
+  await cacheDel(cacheKeys.stats);
   await recordAudit(actor.id, "batch.assignStudent", String(batch.id), { userId: String(userId) });
   return { ok: true };
 }
@@ -113,6 +121,35 @@ export async function removeStudentFromBatch(actor, batchId, userId) {
   profile.batchId = null;
   await profile.save();
   await syncBatchConversation(batchId);
+  await cacheDel(cacheKeys.stats);
   await recordAudit(actor.id, "batch.removeStudent", String(batchId), { userId: String(userId) });
   return { ok: true };
+}
+
+export async function assignStudents(actor, batchId, userIds) {
+  const batch = await Batch.findOne({ _id: batchId, deletedAt: null });
+  if (!batch) throw new ApiError(404, "NOT_FOUND", "Batch not found");
+  const uniqueUserIds = [...new Set(userIds.map(String))];
+  const profiles = await StudentProfile.find({
+    userId: { $in: uniqueUserIds },
+    admissionStatus: "approved",
+  }).select("userId batchId");
+  if (profiles.length !== uniqueUserIds.length) {
+    throw new ApiError(400, "STUDENT", "One or more selected players are no longer eligible for a batch");
+  }
+  const newProfiles = profiles.filter((profile) => String(profile.batchId || "") !== String(batch.id));
+  const currentCount = await StudentProfile.countDocuments({ batchId: batch.id });
+  if (currentCount + newProfiles.length > batch.capacity) {
+    throw new ApiError(400, "CAPACITY", `Only ${Math.max(0, batch.capacity - currentCount)} places remain in this batch`);
+  }
+  const previousBatchIds = [...new Set(newProfiles.map((profile) => String(profile.batchId || "")).filter(Boolean))];
+  await StudentProfile.updateMany(
+    { userId: { $in: newProfiles.map((profile) => profile.userId) }, admissionStatus: "approved" },
+    { batchId: batch.id },
+  );
+  for (const previousBatchId of previousBatchIds) await syncBatchConversation(previousBatchId);
+  await syncBatchConversation(batch.id);
+  await cacheDel(cacheKeys.stats);
+  await recordAudit(actor.id, "batch.assignStudents", String(batch.id), { count: newProfiles.length });
+  return { assigned: newProfiles.length, studentCount: currentCount + newProfiles.length };
 }

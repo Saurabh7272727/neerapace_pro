@@ -1,7 +1,7 @@
 import { getCloudinary } from "../config/cloudinary.js";
 import { ApiError } from "./ApiError.js";
 
-const ASSET_FOLDERS = new Set(["programs", "gallery", "banners"]);
+const ASSET_FOLDERS = new Set(["programs", "gallery", "banners", "coaches", "batches"]);
 
 export async function deleteAcademyImage(publicId, folder) {
   if (!publicId) return false;

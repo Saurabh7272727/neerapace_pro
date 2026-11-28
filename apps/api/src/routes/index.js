@@ -6,6 +6,7 @@ import {
   announcementSchema,
   bannerSchema,
   assignUserSchema,
+  assignUsersSchema,
   attendanceMarkSchema,
   attendanceQuerySchema,
   batchSchema,
@@ -214,6 +215,9 @@ router.delete("/batches/:id/coaches/:userId", ...admin, asyncHandler(async (req,
 router.post("/batches/:id/students", ...admin, validateBody(assignUserSchema), asyncHandler(async (req, res) => {
   res.json({ data: await batches.assignStudent(req.user, req.params.id, req.body.userId) });
 }));
+router.post("/batches/:id/students/bulk", ...admin, validateBody(assignUsersSchema), asyncHandler(async (req, res) => {
+  res.json({ data: await batches.assignStudents(req.user, req.params.id, req.body.userIds) });
+}));
 router.delete("/batches/:id/students/:userId", ...admin, asyncHandler(async (req, res) => {
   res.json({ data: await batches.removeStudentFromBatch(req.user, req.params.id, req.params.userId) });
 }));
@@ -300,7 +304,7 @@ router.post("/uploads", requireAuth, uploadLimit, (req, res, next) => {
 }, asyncHandler(async (req, res) => {
   const folder = String(req.body?.folder || "");
   if (!UPLOAD_FOLDERS.includes(folder)) throw new ApiError(400, "UPLOAD", "Choose a valid image folder");
-  if ((folder === "gallery" || folder === "banners" || folder === "programs" || folder === "content") && req.user.role !== "admin") {
+  if ((folder === "gallery" || folder === "banners" || folder === "programs" || folder === "coaches" || folder === "batches" || folder === "content") && req.user.role !== "admin") {
     throw new ApiError(403, "FORBIDDEN", "You cannot upload to that folder");
   }
   if (folder === "chat" && req.user.status !== "active") throw new ApiError(403, "ACCOUNT_INACTIVE", "Chat uploads require an active account");

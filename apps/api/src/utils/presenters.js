@@ -65,6 +65,8 @@ export function presentCoach(profile) {
     specialization: profile.specialization || "",
     experienceYears: profile.experienceYears || 0,
     isPublic: profile.isPublic,
+    imageUrl: profile.imageUrl || "",
+    imagePublicId: profile.imagePublicId || "",
   };
 }
 
@@ -77,6 +79,8 @@ export function presentBatch(batch, studentCount = 0) {
     status: batch.status,
     startDate: batch.startDate,
     endDate: batch.endDate,
+    imageUrl: batch.imageUrl || "",
+    imagePublicId: batch.imagePublicId || "",
     studentCount,
     program: batch.programId?.name ? { id: String(batch.programId._id), name: batch.programId.name } : { id: String(batch.programId || "") },
     coaches: (batch.coachIds || []).map((coach) =>

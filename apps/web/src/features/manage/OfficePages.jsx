@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { announcementSchema, bannerSchema, batchSchema, coachCreateSchema, coachUpdateSchema, gallerySchema, pageSchema, programSchema, registerSchema, studentUpdateSchema } from "@neerapace/shared";
 import { Badge, Button, Empty, ErrorNote, Field, Modal, PageTitle, PasswordInput, Spinner, inputClass } from "../../components/ui.jsx";
@@ -191,90 +192,229 @@ export function StudentsPage() {
 }
 
 export function CoachesAdminPage() {
+  const queryClient = useQueryClient();
   const coaches = useQuery({ queryKey: ["coaches-manage"], queryFn: () => api.get("/coaches/manage") });
-  const refresh = useInvalidate(["coaches-manage", "coaches"]);
   const [open, setOpen] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
+
+  async function refreshCoaches() {
+    await Promise.all(["coaches-manage", "coaches"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+  }
+
   async function onSubmit(event) {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
     payload.experienceYears = Number(payload.experienceYears || 0);
     payload.isPublic = payload.isPublic === "on";
+    payload.imageUrl = "";
+    payload.imagePublicId = "";
     const parsed = coachCreateSchema.safeParse(payload);
-    if (!parsed.success) return setErrors(fieldErrors(parsed.error));
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      setError({ message: String(issue?.path?.[0] || "Coach details") + ": " + (issue?.message || "Check this field and try again.") });
+      return;
+    }
+    setError(null);
+    setUploading(true);
+    setUploadProgress(file ? 0 : null);
     try {
-      await api.post("/coaches", parsed.data);
+      let imageUrlValue = "";
+      let imagePublicId = "";
+      if (file) {
+        const uploaded = await api.upload("coaches", file, setUploadProgress);
+        imageUrlValue = uploaded.url;
+        imagePublicId = uploaded.publicId;
+      }
+      await api.post("/coaches", { ...parsed.data, imageUrl: imageUrlValue, imagePublicId });
+      form.reset();
+      setFile(null);
       setOpen(false);
-      refresh();
+      await refreshCoaches();
+    } catch (err) {
+      setError(err);
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
+  }
+
+  async function removeCoach(coach) {
+    if (!window.confirm("Remove " + coach.name + " from the academy?")) return;
+    try {
+      await api.del("/coaches/" + coach.userId);
+      await refreshCoaches();
     } catch (err) {
       setError(err);
     }
   }
+
   return (
     <section>
       <PageTitle title="Coaches" />
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="font-serif text-4xl text-pitch">Coaches</h1>
-        <Button onClick={() => setOpen(true)}>Add coach</Button>
-      </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div className="flex flex-wrap items-end justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-fairway">The coaching team</p><h1 className="mt-1 font-serif text-4xl text-pitch">Coaches</h1><p className="mt-2 text-sm text-ink/60">Manage the people and portraits shown on the public coaches page.</p></div><Button onClick={() => { setError(null); setFile(null); setOpen(true); }}>Add coach</Button></div>
+      {error ? <div className="mt-4"><ErrorNote error={error} /></div> : null}
+      {coaches.isLoading ? <div className="mt-6"><Spinner /></div> : null}
+      {coaches.isError ? <div className="mt-4 flex flex-wrap items-center gap-3" role="alert"><ErrorNote error={coaches.error} /><Button variant="ghost" onClick={() => coaches.refetch()}>Retry</Button></div> : null}
+      {!coaches.isLoading && !coaches.data?.length ? <div className="mt-6"><Empty title="No coaches yet" body="Add a coach profile and choose whether it appears publicly." /></div> : null}
+      <div className="-mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-5 [scrollbar-width:thin] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-2 lg:overflow-visible lg:px-0 xl:grid-cols-3">
         {(coaches.data || []).map((coach) => (
-          <article key={coach.id} className="rounded-3xl border border-line bg-paper p-5">
-            <h2 className="font-serif text-2xl text-pitch">{coach.name}</h2>
-            <p className="text-sm">{coach.email}</p>
-            <p className="mt-2 text-sm text-ink/70">{coach.specialization || "General coaching"} · {coach.experienceYears} years</p>
-            <Badge tone={coach.isPublic ? "gold" : "clay"}>{coach.isPublic ? "On the website" : "Hidden"}</Badge>
-            {coach.status === "active" ? <div className="mt-3"><Button variant="danger" onClick={async () => { if (window.confirm("Remove this coach?")) { try { await api.del(`/coaches/${coach.userId}`); refresh(); } catch (err) { setError(err); } } }}>Remove coach</Button></div> : null}
-          </article>
+          <motion.article key={coach.id} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-[82vw] max-w-sm shrink-0 snap-start overflow-hidden rounded-3xl border border-line bg-paper shadow-sm transition-shadow hover:shadow-lg lg:w-auto lg:max-w-none">
+            <div className="relative h-64 overflow-hidden bg-gradient-to-br from-pitch to-fairway sm:h-72">
+              {coach.imageUrl ? <img src={imageUrl(coach.imageUrl, 700)} alt={coach.name + ", academy coach"} className="h-full w-full object-cover object-top" loading="lazy" /> : <div className="grid h-full place-items-center font-serif text-6xl text-white/80">{coach.name?.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}</div>}
+              <div className="absolute inset-0 bg-gradient-to-t from-pitch/90 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">{coach.specialization || "Academy coach"}</p><h2 className="mt-1 font-serif text-2xl text-white">{coach.name}</h2></div>
+            </div>
+            <div className="p-4"><div className="flex flex-wrap items-center justify-between gap-2"><Badge tone={coach.isPublic ? "gold" : "clay"}>{coach.isPublic ? "Public profile" : "Hidden profile"}</Badge><span className="text-xs text-ink/55">{coach.experienceYears} years experience</span></div><p className="mt-3 line-clamp-3 min-h-12 text-sm leading-6 text-ink/70">{coach.bio || coach.email}</p>{coach.status === "active" ? <Button variant="danger" className="mt-4" onClick={() => removeCoach(coach)}>Remove coach</Button> : null}</div>
+          </motion.article>
         ))}
       </div>
-      <Modal open={open} title="New coach" onClose={() => setOpen(false)}>
+      <Modal open={open} title="Add a coach" onClose={() => { if (uploading) return; setOpen(false); setError(null); setFile(null); }}>
         <form className="grid gap-3" onSubmit={onSubmit}>
-          {["name", "email", "phone", "password", "specialization", "bio"].map((name) => (
-            <Field key={name} label={name} error={errors[name]}>{name === "password" ? <PasswordInput className={inputClass} name={name} /> : <input className={inputClass} name={name} type="text" />}</Field>
-          ))}
-          <Field label="Years"><input className={inputClass} name="experienceYears" type="number" defaultValue="0" /></Field>
-          <label className="text-sm"><input name="isPublic" type="checkbox" defaultChecked /> Show on the public coaches page</label>
+          <div className="grid gap-3 sm:grid-cols-2">{["name", "email", "phone", "password", "specialization", "experienceYears", "bio"].map((name) => <Field key={name} label={name === "experienceYears" ? "Years of experience" : name === "bio" ? "Short biography" : name[0].toUpperCase() + name.slice(1)}>{name === "password" ? <PasswordInput className={inputClass} name={name} autoComplete="new-password" required /> : name === "bio" ? <textarea className={inputClass} name={name} rows={3} maxLength={1000} /> : <input className={inputClass} name={name} type={name === "email" ? "email" : name === "experienceYears" ? "number" : "text"} min={name === "experienceYears" ? 0 : undefined} defaultValue={name === "experienceYears" ? 0 : undefined} required={["name", "email", "phone"].includes(name)} />}</Field>)}</div>
+          <ImagePicker label={uploading ? "Uploading portrait..." : "Choose coach portrait"} file={file} onFileChange={setFile} uploadProgress={uploadProgress} />
+          <label className="flex items-center gap-2 text-sm"><input name="isPublic" type="checkbox" defaultChecked /> Show on public coaches page</label>
           <ErrorNote error={error} />
-          <Button type="submit">Create coach</Button>
+          <Button type="submit" disabled={uploading}>{uploading ? "Saving coach..." : "Create coach profile"}</Button>
         </form>
       </Modal>
     </section>
   );
 }
 
+function AdminBatchCard({ batch, allBatches, coaches, availableStudents, onAssignStudents, onAssignCoach, onRemoveCoach, onReplaceCoach, onRemoveStudent, onTransferStudent, onDeleteBatch, errorSetter }) {
+  const roster = useQuery({ queryKey: ["batch-roster", batch.id], queryFn: () => api.get(`/batches/${batch.id}/roster`) });
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [coachId, setCoachId] = useState("");
+  const [transferTargets, setTransferTargets] = useState({});
+  const remaining = Math.max(0, batch.capacity - batch.studentCount);
+
+  async function assignSelected() {
+    try {
+      await onAssignStudents(batch.id, selectedIds);
+      setSelectedIds([]);
+    } catch (err) {
+      errorSetter(err);
+    }
+  }
+
+  return (
+    <motion.article layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="overflow-hidden rounded-3xl border border-line bg-paper shadow-sm">
+      {batch.imageUrl ? <div className="relative h-40 overflow-hidden bg-pitch sm:h-48"><img src={imageUrl(batch.imageUrl, 900)} alt={`${batch.name} batch`} className="h-full w-full object-cover object-top" loading="lazy" /><div className="absolute inset-0 bg-gradient-to-t from-pitch/80 via-transparent to-transparent" /><span className="absolute bottom-3 left-4 rounded-full border border-white/25 bg-pitch/70 px-3 py-1 text-xs font-semibold text-white backdrop-blur">{batch.status}</span></div> : null}
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className="font-serif text-2xl text-pitch">{batch.name}</h2>{!batch.imageUrl ? <Badge>{batch.status}</Badge> : null}</div><p className="mt-1 text-sm text-ink/65">{batch.program?.name || "Program"} · {batch.schedule}</p></div>
+          <div className="rounded-2xl border border-fairway/15 bg-fairway/5 px-3 py-2 text-right"><p className="text-xl font-semibold leading-none text-pitch">{batch.studentCount}<span className="text-sm font-normal text-ink/45">/{batch.capacity}</span></p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-ink/55">players</p></div>
+        </div>
+        <p className="mt-3 text-xs text-ink/55">{batch.startDate} to {batch.endDate}</p>
+
+        <section className="mt-5 rounded-2xl border border-line bg-white p-4">
+          <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold text-pitch">Coaches</h3><span className="text-xs text-ink/55">{batch.coaches.length} assigned</span></div>
+          <div className="mt-2 flex flex-wrap gap-2">{batch.coaches.map((coach) => <div key={coach.id} className="flex items-center gap-2 rounded-full bg-cream px-3 py-1.5 text-xs text-pitch"><span>{coach.name || "Coach"}</span><select aria-label={`Change coach ${coach.name || "assignment"}`} className="max-w-28 rounded-lg border border-line bg-white px-1.5 py-1 text-[10px]" value="" onChange={(event) => { if (event.target.value) onReplaceCoach(batch.id, coach.id, event.target.value).catch(errorSetter); }}><option value="">Change…</option>{coaches.filter((option) => option.status === "active" && option.userId !== coach.id).map((option) => <option key={option.userId} value={option.userId}>{option.name}</option>)}</select><button type="button" onClick={() => onRemoveCoach(batch.id, coach.id).catch(errorSetter)} className="grid h-6 w-6 place-items-center rounded-full text-clay hover:bg-clay/10" aria-label={`Remove ${coach.name || "coach"}`}>×</button></div>)}{!batch.coaches.length ? <p className="text-xs text-ink/50">No coach assigned yet.</p> : null}</div>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row"><select className={`${inputClass} min-w-0 flex-1`} value={coachId} onChange={(event) => setCoachId(event.target.value)}><option value="">Choose an active coach</option>{coaches.filter((coach) => coach.status === "active" && !batch.coaches.some((assigned) => assigned.id === coach.userId)).map((coach) => <option key={coach.userId} value={coach.userId}>{coach.name} · {coach.specialization || "Coach"}</option>)}</select><Button disabled={!coachId} onClick={async () => { try { await onAssignCoach(batch.id, coachId); setCoachId(""); } catch (err) { errorSetter(err); } }}>Assign coach</Button></div>
+        </section>
+
+        <section className="mt-4 rounded-2xl border border-line bg-white p-4">
+          <div className="flex items-center justify-between gap-2"><h3 className="text-sm font-semibold text-pitch">Roster</h3><span className="text-xs text-ink/55">{roster.data?.length || 0} players</span></div>
+          {roster.isLoading ? <p className="mt-3 text-xs text-ink/55">Loading roster…</p> : roster.isError ? <button type="button" onClick={() => roster.refetch()} className="mt-3 text-xs font-medium text-clay">Couldn’t load roster · Retry</button> : roster.data?.length ? <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">{roster.data.map((student) => <div key={student.userId} className="flex flex-col gap-2 rounded-xl bg-cream/70 p-3 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium text-pitch">{student.name}</p><p className="truncate text-xs text-ink/55">{student.registrationId} · {student.email}</p></div><div className="flex gap-2"><select aria-label={`Transfer ${student.name} to another batch`} className="min-w-0 flex-1 rounded-lg border border-line bg-white px-2 py-2 text-xs sm:max-w-44" value={transferTargets[student.userId] || ""} onChange={(event) => setTransferTargets((current) => ({ ...current, [student.userId]: event.target.value }))}><option value="">Transfer to…</option>{allBatches.filter((target) => target.id !== batch.id).map((target) => <option key={target.id} value={target.id} disabled={target.studentCount >= target.capacity}>{target.name} ({target.studentCount}/{target.capacity})</option>)}</select><Button variant="danger" className="px-3" onClick={() => onRemoveStudent(batch.id, student.userId).catch(errorSetter)}>Remove</Button><Button variant="ghost" className="border border-line px-3" disabled={!transferTargets[student.userId]} onClick={() => onTransferStudent(batch.id, transferTargets[student.userId], student.userId).then(() => setTransferTargets((current) => ({ ...current, [student.userId]: "" }))).catch(errorSetter)}>Move</Button></div></div>)}</div> : <p className="mt-3 text-xs text-ink/55">No players in this batch yet.</p>}
+        </section>
+
+        <section className="mt-4 rounded-2xl border border-line bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="text-sm font-semibold text-pitch">Add approved players</h3><p className="mt-0.5 text-xs text-ink/55">Only players without a batch are listed. {remaining} {remaining === 1 ? "place" : "places"} available.</p></div><span className="rounded-full bg-fairway/10 px-2.5 py-1 text-xs font-semibold text-fairway">{selectedIds.length} selected</span></div>
+          {availableStudents.length ? <><div className="mt-3 max-h-52 space-y-1 overflow-y-auto rounded-xl border border-line p-2">{availableStudents.map((student) => <label key={student.userId} className={`flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 text-sm transition ${selectedIds.includes(student.userId) ? "bg-fairway/10" : "hover:bg-cream"}`}><input type="checkbox" checked={selectedIds.includes(student.userId)} disabled={!selectedIds.includes(student.userId) && (remaining === 0 || selectedIds.length >= remaining)} onChange={(event) => setSelectedIds((current) => event.target.checked ? [...current, student.userId] : current.filter((id) => id !== student.userId))} /><span className="min-w-0 flex-1 truncate text-pitch">{student.name}</span><span className="shrink-0 text-xs text-ink/50">{student.registrationId}</span></label>)}</div><Button className="mt-3 w-full sm:w-auto" disabled={!selectedIds.length || !remaining} onClick={assignSelected}>Assign {selectedIds.length || "selected"} {selectedIds.length === 1 ? "player" : "players"}</Button></> : <p className="mt-3 rounded-xl bg-cream/70 p-3 text-xs text-ink/55">No unassigned approved players available.</p>}
+        </section>
+        <div className="mt-4 flex justify-end"><Button variant="danger" onClick={() => onDeleteBatch(batch)}>Delete batch</Button></div>
+      </div>
+    </motion.article>
+  );
+}
+
 export function BatchesPage() {
   const session = useSession();
+  const queryClient = useQueryClient();
   const batches = useQuery({ queryKey: ["batches"], queryFn: () => api.get("/batches") });
   const programs = useQuery({ queryKey: ["programs"], queryFn: () => api.get("/programs"), enabled: session.data?.role === "admin" });
   const coaches = useQuery({ queryKey: ["coaches-manage"], queryFn: () => api.get("/coaches/manage"), enabled: session.data?.role === "admin" });
-  const students = useQuery({ queryKey: ["approved-students"], queryFn: () => api.get("/students?status=approved"), enabled: session.data?.role === "admin" });
-  const refresh = useInvalidate(["batches", "students", "stats"]);
+  const students = useQuery({ queryKey: ["approved-students", "unassigned"], queryFn: () => api.getPage("/students?status=approved&unassigned=true&limit=100"), enabled: session.data?.role === "admin" });
+  const [batchFile, setBatchFile] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [savingBatch, setSavingBatch] = useState(false);
   const [error, setError] = useState(null);
   const admin = session.data?.role === "admin";
 
   async function createBatch(event) {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
     payload.capacity = Number(payload.capacity);
+    payload.imageUrl = "";
+    payload.imagePublicId = "";
     const parsed = batchSchema.safeParse(payload);
     if (!parsed.success) return setError({ message: "Check the batch dates, program and capacity." });
+    setSavingBatch(true);
     try {
-      await api.post("/batches", parsed.data);
-      event.currentTarget.reset();
+      let imageUrl = parsed.data.imageUrl;
+      let imagePublicId = parsed.data.imagePublicId;
+      if (batchFile) {
+        const uploaded = await api.upload("batches", batchFile, setUploadProgress);
+        imageUrl = uploaded.url;
+        imagePublicId = uploaded.publicId;
+      }
+      await api.post("/batches", { ...parsed.data, imageUrl, imagePublicId });
+      form.reset();
+      setBatchFile(null);
       setError(null);
-      refresh();
+      await Promise.all(["batches", "students", "stats"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
     } catch (err) {
       setError(err);
+    } finally {
+      setSavingBatch(false);
+      setUploadProgress(null);
     }
   }
 
-  async function assign(batchId, kind, userId) {
-    if (!userId) return;
+  async function refreshBatchData() {
+    await Promise.all(["batches", "students", "approved-students", "stats", "batch-roster"].map((key) => queryClient.invalidateQueries({ queryKey: [key] })));
+  }
+  async function assignCoach(batchId, userId) {
+    await api.post(`/batches/${batchId}/coaches`, { userId });
+    await refreshBatchData();
+    setError(null);
+  }
+  async function removeCoach(batchId, userId) {
+    await api.del(`/batches/${batchId}/coaches/${userId}`);
+    await refreshBatchData();
+    setError(null);
+  }
+  async function replaceCoach(batchId, oldUserId, newUserId) {
+    await api.post(`/batches/${batchId}/coaches`, { userId: newUserId });
+    await api.del(`/batches/${batchId}/coaches/${oldUserId}`);
+    await refreshBatchData();
+    setError(null);
+  }
+  async function assignStudents(batchId, userIds) {
+    await api.post(`/batches/${batchId}/students/bulk`, { userIds });
+    setError(null);
+    await refreshBatchData();
+  }
+  async function removeStudent(batchId, userId) {
+    await api.del(`/batches/${batchId}/students/${userId}`);
+    await refreshBatchData();
+    setError(null);
+  }
+  async function transferStudent(_batchId, targetBatchId, userId) {
+    await api.post(`/batches/${targetBatchId}/students`, { userId });
+    await refreshBatchData();
+    setError(null);
+  }
+  async function deleteBatch(batch) {
+    if (!window.confirm(`Delete ${batch.name}? Students will be unassigned from this batch.`)) return;
     try {
-      await api.post(`/batches/${batchId}/${kind}`, { userId });
-      refresh();
+      await api.del(`/batches/${batch.id}`);
+      await refreshBatchData();
       setError(null);
     } catch (err) {
       setError(err);
@@ -286,9 +426,11 @@ export function BatchesPage() {
       <PageTitle title="Batches" />
       <h1 className="font-serif text-4xl text-pitch">{admin ? "Batches" : "My batch"}</h1>
       <ErrorNote error={error} />
+      {batches.isError ? <div className="mt-4 flex flex-wrap items-center gap-3" role="alert"><ErrorNote error={batches.error} /><Button variant="ghost" onClick={() => batches.refetch()}>Retry</Button></div> : null}
       {admin ? (
-        <form className="mt-6 grid gap-3 rounded-3xl border border-line bg-paper p-5" onSubmit={createBatch}>
-          <Field label="Name"><input className={inputClass} name="name" required /></Field>
+        <form className="mt-6 grid gap-4 rounded-3xl border border-line bg-paper p-5 shadow-sm sm:p-6 lg:grid-cols-2" onSubmit={createBatch}>
+          <div className="lg:col-span-2"><h2 className="font-serif text-2xl text-pitch">Create a training batch</h2><p className="mt-1 text-sm text-ink/60">Set the schedule, capacity and squad cover image.</p></div>
+          <Field label="Batch name"><input className={inputClass} name="name" required /></Field>
           <Field label="Program">
             <select className={inputClass} name="programId" required defaultValue="">
               <option value="" disabled>Choose</option>
@@ -306,36 +448,13 @@ export function BatchesPage() {
               <option value="completed">completed</option>
             </select>
           </Field>
-          <div className="self-end"><Button type="submit">Create batch</Button></div>
+          <div className="lg:col-span-2"><ImagePicker label={savingBatch ? "Uploading cover..." : "Choose batch cover"} file={batchFile} onFileChange={setBatchFile} uploadProgress={uploadProgress} /></div>
+          <div className="flex flex-wrap items-center justify-between gap-3 lg:col-span-2"><p className="text-xs text-ink/55">Cover photos are optional. Images upload securely to academy storage.</p><Button type="submit" disabled={savingBatch}>{savingBatch ? "Creating batch..." : "Create batch"}</Button></div>
         </form>
       ) : null}
-      <div className="mt-6 space-y-4">
-        {(batches.data || []).map((batch) => (
-          <article key={batch.id} className="rounded-3xl border border-line bg-paper p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-serif text-2xl text-pitch">{batch.name}</h2>
-              <Badge>{batch.status}</Badge>
-            </div>
-            <p className="mt-2 text-sm">{batch.program?.name} · {batch.schedule}</p>
-            <p className="text-sm text-ink/70">{batch.studentCount}/{batch.capacity} players · {batch.startDate} to {batch.endDate}</p>
-            <p className="text-sm">Coaches: {batch.coaches.map((coach) => coach.name).join(", ") || "None yet"}</p>
-            {admin ? (
-              <>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  <select className={inputClass} defaultValue="" onChange={(event) => assign(batch.id, "coaches", event.target.value)}>
-                    <option value="">Assign a coach</option>
-                    {(coaches.data || []).map((coach) => <option key={coach.userId} value={coach.userId}>{coach.name}</option>)}
-                  </select>
-                  <select className={inputClass} defaultValue="" onChange={(event) => assign(batch.id, "students", event.target.value)}>
-                    <option value="">Assign a player</option>
-                    {(students.data || []).map((student) => <option key={student.userId} value={student.userId}>{student.name} · {student.registrationId}</option>)}
-                  </select>
-                </div>
-                <div className="mt-3"><Button variant="danger" onClick={async () => { if (window.confirm("Remove this batch?")) { try { await api.del(`/batches/${batch.id}`); refresh(); } catch (err) { setError(err); } } }}>Remove batch</Button></div>
-              </>
-            ) : null}
-          </article>
-        ))}
+      <div className="mt-7 flex flex-wrap items-end justify-between gap-3"><div><h2 className="font-serif text-2xl text-pitch">{admin ? "Squad overview" : "Your squad"}</h2><p className="mt-1 text-sm text-ink/60">{batches.data?.length || 0} {batches.data?.length === 1 ? "batch" : "batches"} | {admin ? `${students.data?.meta?.total ?? 0} approved players without a batch` : "roster and capacity update after each change"}.</p></div><Button variant="ghost" onClick={() => batches.refetch()}>Refresh</Button></div>
+      <div className="mt-4 grid gap-5 xl:grid-cols-2">
+        {(batches.data || []).map((batch) => admin ? <AdminBatchCard key={batch.id} batch={batch} allBatches={batches.data || []} coaches={coaches.data || []} availableStudents={students.data?.data || []} onAssignStudents={assignStudents} onAssignCoach={assignCoach} onRemoveCoach={removeCoach} onReplaceCoach={replaceCoach} onRemoveStudent={removeStudent} onTransferStudent={transferStudent} onDeleteBatch={deleteBatch} errorSetter={setError} /> : <article key={batch.id} className="rounded-3xl border border-line bg-paper p-5"><h2 className="font-serif text-2xl text-pitch">{batch.name}</h2><p className="mt-2 text-sm">{batch.program?.name} | {batch.schedule}</p><p className="text-sm text-ink/70">{batch.studentCount}/{batch.capacity} players | {batch.startDate} to {batch.endDate}</p></article>)}
       </div>
       {!batches.data?.length && !batches.isLoading ? <div className="mt-6"><Empty title="No batch" body="The office creates a batch and then assigns people to it." /></div> : null}
     </section>
@@ -423,14 +542,15 @@ export function AnnouncementsPage() {
   const [error, setError] = useState(null);
   async function publish(event) {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const form = event.currentTarget;
+    const payload = Object.fromEntries(new FormData(form).entries());
     payload.publish = true;
     if (!payload.batchId) delete payload.batchId;
     const parsed = announcementSchema.safeParse(payload);
     if (!parsed.success) return setError({ message: "Add a title, a message, and a batch when the audience is one squad." });
     try {
       await api.post("/announcements", parsed.data);
-      event.currentTarget.reset();
+      form.reset();
       refresh();
       setError(null);
     } catch (err) {

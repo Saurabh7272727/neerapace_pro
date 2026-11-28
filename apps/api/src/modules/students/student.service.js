@@ -74,6 +74,10 @@ export async function listStudentsFor(actor, query) {
     filter = { userId: actor.id };
   }
   if (actor.role === "admin" && query.status) filter.admissionStatus = query.status;
+  if (actor.role === "admin" && query.unassigned === "true") {
+    filter.batchId = null;
+    filter.admissionStatus = "approved";
+  }
   if (q) {
     const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const matchingUsers = await User.find({ role: "student", deletedAt: null, name: { $regex: escaped, $options: "i" } }).select("_id").lean();

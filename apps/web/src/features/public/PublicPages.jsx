@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { enquirySchema } from "@neerapace/shared";
@@ -331,15 +332,16 @@ export function CoachesPage() {
       <p className="mt-3 max-w-2xl text-ink/75">{page.data?.heroSubtitle}</p>
       {coaches.isLoading ? <Spinner /> : null}
       {!coaches.data?.length && !coaches.isLoading ? <div className="mt-8"><Empty title="Coaches will appear here" body="The office publishes a profile when a coach is ready to be listed." /></div> : null}
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
+      <div className="-mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-5 [scrollbar-width:thin] [-webkit-overflow-scrolling:touch] sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
         {(coaches.data || []).map((coach) => (
-          <article key={coach.id} className="rounded-3xl border border-line bg-paper p-5">
-            {coach.avatarUrl ? <img src={imageUrl(coach.avatarUrl, 320)} alt="" className="mb-4 h-16 w-16 rounded-full object-cover" loading="lazy" /> : null}
-            <h2 className="font-serif text-2xl text-pitch">{coach.name}</h2>
-            <p className="text-sm text-fairway">{coach.specialization || "Academy coach"}</p>
-            <p className="mt-3 text-sm text-ink/75">{coach.bio}</p>
-            <p className="mt-3 text-xs uppercase tracking-wide text-ink/50">{coach.experienceYears} years</p>
-          </article>
+          <motion.article key={coach.id} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} whileHover={{ y: -4 }} className="w-[82vw] max-w-sm shrink-0 snap-start overflow-hidden rounded-3xl border border-line bg-paper shadow-sm transition-shadow hover:shadow-xl lg:w-auto lg:max-w-none">
+            <div className="relative h-72 overflow-hidden bg-gradient-to-br from-pitch to-fairway sm:h-80">
+              {coach.imageUrl ? <img src={imageUrl(coach.imageUrl, 700)} alt={coach.name + ", academy coach"} className="h-full w-full object-cover object-top" loading="lazy" decoding="async" /> : <div className="grid h-full place-items-center font-serif text-7xl text-white/80">{coach.name?.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}</div>}
+              <div className="absolute inset-0 bg-gradient-to-t from-pitch/95 via-pitch/15 to-transparent" />
+              <div className="absolute bottom-5 left-5 right-5"><p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold">{coach.specialization || "Academy coach"}</p><h2 className="mt-1 font-serif text-3xl text-white">{coach.name}</h2></div>
+            </div>
+            <div className="p-5"><p className="min-h-14 text-sm leading-6 text-ink/75">{coach.bio || "Supporting players through focused cricket coaching and development."}</p><p className="mt-4 border-t border-line pt-3 text-xs font-semibold uppercase tracking-wide text-fairway">{coach.experienceYears} years coaching experience</p></div>
+          </motion.article>
         ))}
       </div>
     </section>
@@ -444,7 +446,8 @@ export function ContactPage() {
 
   async function onSubmit(event) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = Object.fromEntries(form.entries());
     const parsed = enquirySchema.safeParse(payload);
     if (!parsed.success) {
@@ -456,7 +459,7 @@ export function ContactPage() {
     try {
       await api.post("/enquiries", parsed.data);
       setDone(true);
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (err) {
       setError(err);
     }
