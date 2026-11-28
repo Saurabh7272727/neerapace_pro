@@ -98,7 +98,7 @@ export function HomeBannerSpotlight() {
           {Array.from({ length: 5 }, (_, index) => (
             <div
               key={index}
-              className={`h-[21rem] w-[78vw] max-w-[310px] shrink-0 snap-center animate-pulse rounded-2xl border border-white/10 bg-white/[0.07] lg:h-auto lg:w-auto lg:max-w-none ${index === 0 ? "lg:col-span-6 lg:row-span-2" : "lg:col-span-3"
+              className={`h-[21rem] w-[78vw] max-w-[310px] shrink-0 snap-center animate-pulse rounded-2xl border border-white/10 bg-white/[0.07] lg:h-auto lg:min-h-0 lg:w-auto lg:max-w-none ${index === 0 ? "lg:col-span-6 lg:row-span-2" : "lg:col-span-3"
                 }`}
             />
           ))}
@@ -134,17 +134,16 @@ export function HomeBannerSpotlight() {
             return (
               <motion.article
                 key={item.id}
-                initial={{ opacity: 0, x: 24, y: 12, scale: 0.96 }}
-                whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-                viewport={{ once: true, amount: 0.25 }}
+                initial={{ opacity: 0, x: 20, scale: 0.97 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
                 transition={{
-                  duration: 0.48,
+                  duration: 0.45,
                   delay: index * 0.08,
                   ease: [0.22, 1, 0.36, 1],
                 }}
                 whileHover={{ y: -3, scale: 1.012 }}
                 whileTap={{ scale: 0.985 }}
-                className={`group relative isolate flex h-[22rem] w-[80vw] max-w-[320px] shrink-0 snap-center flex-col justify-end overflow-hidden rounded-2xl border border-white/12 bg-[#081b15] shadow-[0_14px_34px_-14px_rgba(0,0,0,0.85)] transition-colors duration-300 hover:border-gold/45 lg:h-auto lg:w-auto lg:max-w-none ${bannerPlacement(
+                className={`group relative isolate flex h-[22rem] w-[80vw] max-w-[320px] shrink-0 snap-center flex-col justify-end overflow-hidden rounded-2xl border border-white/12 bg-[#081b15] shadow-[0_14px_34px_-14px_rgba(0,0,0,0.85)] transition-colors duration-300 hover:border-gold/45 lg:h-auto lg:min-h-0 lg:w-auto lg:max-w-none ${bannerPlacement(
                   items.length,
                   index
                 )}`}
