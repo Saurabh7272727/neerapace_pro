@@ -9,13 +9,13 @@ import { syncBatchConversation } from "../chat/chat.service.js";
 import { deleteAcademyImage } from "../../utils/cloudinaryAssets.js";
 
 async function withCounts(batches) {
-  const ids = batches.map((batch) => batch.id || batch._id);
+  const ids = batches.map((batch) => batch._id ?? batch.id);
   const counts = await StudentProfile.aggregate([
     { $match: { batchId: { $in: ids } } },
     { $group: { _id: "$batchId", count: { $sum: 1 } } },
   ]);
   const map = new Map(counts.map((row) => [String(row._id), row.count]));
-  return batches.map((batch) => presentBatch(batch, map.get(String(batch.id || batch._id)) || 0));
+  return batches.map((batch) => presentBatch(batch, map.get(String(batch._id ?? batch.id)) || 0));
 }
 
 export async function listBatches(actor) {
