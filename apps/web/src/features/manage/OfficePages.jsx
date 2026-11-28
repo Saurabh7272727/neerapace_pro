@@ -65,6 +65,20 @@ export function StudentsPage() {
     }
   }
 
+  async function changeStudentStatus(student, status) {
+    const message = status === "suspended"
+      ? `Suspend ${student.name}'s access? Their current sessions will end immediately.`
+      : `Reactivate ${student.name}'s account? They will be able to sign in again.`;
+    if (!window.confirm(message)) return;
+    setError(null);
+    try {
+      await api.patch(`/users/${student.userId}/status`, { status });
+      refresh();
+    } catch (err) {
+      setError(err);
+    }
+  }
+
   return (
     <section>
       <PageTitle title="Students" />
@@ -107,7 +121,11 @@ export function StudentsPage() {
         title={selectedStudent?.name || "Student details"}
         eyebrow={selectedStudent?.registrationId || "Student record"}
         onClose={() => setSelectedStudentId("")}
-        footer={selectedStudent ? <Button variant="danger" onClick={() => removeStudent(selectedStudent.userId)}>Remove student</Button> : null}
+        footer={selectedStudent ? <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+          {selectedStudent.status === "active" ? <Button variant="danger" onClick={() => changeStudentStatus(selectedStudent, "suspended")}>Suspend access</Button> : null}
+          {selectedStudent.status === "suspended" ? <Button variant="gold" onClick={() => changeStudentStatus(selectedStudent, "active")}>Reactivate account</Button> : null}
+          <Button variant="danger" onClick={() => removeStudent(selectedStudent.userId)}>Permanently delete</Button>
+        </div> : null}
       >
         {selectedStudent ? <>
           <ErrorNote error={error} />
@@ -152,7 +170,7 @@ export function StudentsPage() {
                 <p className="mt-3 text-sm text-ink/70">Registration: {student.registrationId || "—"} · Program: {student.program?.name || "—"} · Batch: {student.batch?.name || "Not assigned"}</p>
               </div>
             )}
-            {admin ? <Button variant="danger" onClick={() => removeStudent(student.userId)}>Remove</Button> : null}
+            {admin ? <Button variant="ghost" className="border border-line sm:justify-self-end" onClick={() => setSelectedStudentId(student.userId)}>Manage access</Button> : null}
           </article>
         ))}
       </div>

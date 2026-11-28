@@ -41,12 +41,12 @@ export function DashboardLayout() {
 
   return (
     <div className="min-h-screen bg-cream md:grid" style={{ gridTemplateColumns: collapsed ? "88px 1fr" : "240px 1fr" }}>
-      <aside className="sticky top-0 hidden h-screen self-start overflow-y-auto border-r border-line bg-pitch text-cream md:block">
-        <div className="flex items-center justify-between px-4 py-4">
+      <aside className="sticky top-0 hidden h-dvh min-h-0 self-start flex-col overflow-hidden border-r border-line bg-pitch text-cream md:flex">
+        <div className="flex shrink-0 items-center justify-between px-4 py-4">
           <Link to="/" className="font-serif text-xl">{collapsed ? "NP" : "Neera Pace"}</Link>
           <button className="text-xs text-gold" type="button" onClick={() => dispatch(toggleNav())}>{collapsed ? "Open" : "Compact"}</button>
         </div>
-        <nav className="space-y-1 px-3 pb-4">
+        <nav aria-label="Dashboard navigation" className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 pb-4 [scrollbar-color:rgb(255_255_255_/_0.3)_transparent] [scrollbar-width:thin]">
           {linksFor(user?.role).map((link) => (
             <NavLink key={link.to} to={link.to} className={({ isActive }) => `block rounded-xl px-3 py-2 text-sm ${isActive ? "bg-cream text-pitch" : "text-cream/80"}`}>
               {collapsed ? link.label.slice(0, 1) : link.label}
@@ -57,12 +57,12 @@ export function DashboardLayout() {
       </aside>
 
       <div onClick={() => setMobileMenuOpen(false)} className={`fixed inset-0 z-40 bg-pitch-dark/55 backdrop-blur-sm transition-opacity md:hidden ${mobileMenuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} aria-hidden={!mobileMenuOpen} />
-      <aside className={`fixed right-0 top-0 z-50 h-dvh w-[min(86vw,340px)] bg-pitch p-5 text-cream shadow-2xl transition-transform duration-300 md:hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`} aria-label="Dashboard mobile navigation">
-        <div className="flex items-center justify-between">
+      <aside className={`fixed right-0 top-0 z-50 flex h-dvh min-h-0 w-[min(86vw,340px)] flex-col overflow-hidden bg-pitch p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-cream shadow-2xl transition-transform duration-300 md:hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`} aria-label="Dashboard mobile navigation">
+        <div className="flex shrink-0 items-center justify-between">
           <Link to="/" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-full border border-gold/30 bg-gold/10 font-serif text-gold">NP</span><span className="font-serif text-xl">Neera Pace</span></Link>
           <button type="button" aria-label="Close dashboard menu" onClick={() => setMobileMenuOpen(false)} className="grid h-10 w-10 place-items-center rounded-full border border-cream/20 text-xl">×</button>
         </div>
-        <nav className="mt-8 space-y-1">
+        <nav aria-label="Dashboard mobile navigation links" className="mt-8 min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain pb-2 [scrollbar-color:rgb(255_255_255_/_0.3)_transparent] [scrollbar-width:thin]">
           {linksFor(user?.role).map((link) => (
             <NavLink key={link.to} to={link.to} onClick={() => setMobileMenuOpen(false)} className={({ isActive }) => `block rounded-xl px-4 py-3 text-sm ${isActive ? "bg-gold text-pitch" : "text-cream/80 hover:bg-cream/10"}`}>
               {link.label}{link.to === "/app/notifications" && unread.data?.count ? ` (${unread.data.count})` : ""}

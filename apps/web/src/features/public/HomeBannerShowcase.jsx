@@ -5,13 +5,13 @@ import { api, imageUrl } from "../../lib/api.js";
 const MAX_BANNERS = 5;
 
 function bannerPlacement(count, index) {
-  if (count === 1) return "col-span-2 aspect-[4/3] min-h-[11rem] lg:col-span-12 lg:row-span-2 lg:aspect-auto lg:min-h-0";
-  if (count === 2) return "aspect-[4/3] min-h-[11rem] lg:col-span-6 lg:row-span-2 lg:aspect-auto lg:min-h-0";
-  if (count === 3 && index === 0) return "col-span-2 aspect-[4/3] min-h-[11rem] lg:col-span-12 lg:aspect-auto lg:min-h-0";
-  if (count === 3) return "aspect-[4/3] min-h-[11rem] lg:col-span-6 lg:aspect-auto lg:min-h-0";
-  if (count === 4) return "aspect-[4/3] min-h-[11rem] lg:col-span-6 lg:aspect-auto lg:min-h-0";
-  if (index === 0) return "aspect-[4/3] min-h-[11rem] lg:col-span-6 lg:row-span-2 lg:aspect-auto lg:min-h-0";
-  return "aspect-[4/3] min-h-[11rem] lg:col-span-3 lg:aspect-auto lg:min-h-0";
+  if (count === 1) return "col-span-2 aspect-[4/3] min-h-[16rem] lg:col-span-12 lg:row-span-2 lg:aspect-auto lg:min-h-0";
+  if (count === 2) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:row-span-2 lg:aspect-auto lg:min-h-0";
+  if (count === 3 && index === 0) return "col-span-2 aspect-[4/3] min-h-[16rem] lg:col-span-12 lg:aspect-auto lg:min-h-0";
+  if (count === 3) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:aspect-auto lg:min-h-0";
+  if (count === 4) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:aspect-auto lg:min-h-0";
+  if (index === 0) return "aspect-[4/3] min-h-[16rem] lg:col-span-6 lg:row-span-2 lg:aspect-auto lg:min-h-0";
+  return "aspect-[4/3] min-h-[16rem] lg:col-span-3 lg:aspect-auto lg:min-h-0";
 }
 
 export function HomeBannerSpotlight() {
@@ -36,7 +36,7 @@ export function HomeBannerSpotlight() {
 
       {banners.isLoading ? (
         <div className="grid grid-cols-2 gap-2 lg:h-[22rem] lg:grid-cols-12 lg:grid-rows-2" aria-label="Loading player spotlights" aria-busy="true">
-          {Array.from({ length: 5 }, (_, index) => <div key={index} className={`min-h-[11rem] animate-pulse rounded-2xl bg-white/10 lg:min-h-0 ${index === 0 ? "aspect-[4/3] lg:col-span-6 lg:row-span-2 lg:aspect-auto" : "aspect-[4/3] lg:col-span-3 lg:aspect-auto"}`} />)}
+          {Array.from({ length: 5 }, (_, index) => <div key={index} className={`min-h-[16rem] animate-pulse rounded-2xl bg-white/10 lg:min-h-0 ${index === 0 ? "aspect-[4/3] lg:col-span-6 lg:row-span-2 lg:aspect-auto" : "aspect-[4/3] lg:col-span-3 lg:aspect-auto"}`} />)}
         </div>
       ) : banners.isError && !banners.data ? (
         <div className="grid min-h-64 place-items-center rounded-2xl border border-white/10 bg-white/5 p-6 text-center lg:h-[22rem]" role="status">
@@ -63,14 +63,14 @@ export function HomeBannerSpotlight() {
                   aria-hidden="true"
                   loading="lazy"
                   decoding="async"
-                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-40 blur-xl"
+                  className="absolute inset-0 h-full w-full scale-110 object-cover object-top opacity-40 blur-xl"
                 />
                 <img
                   src={imageUrl(item.imageUrl, 720)}
                   alt={`${item.playerName} — ${item.caption}`}
                   loading={index === 0 ? "eager" : "lazy"}
                   decoding="async"
-                  className="absolute inset-0 z-10 h-full w-full object-contain p-1 sm:p-1.5"
+                  className="absolute inset-0 z-10 h-full w-full object-cover object-top"
                 />
                 {item.tag ? <span className="absolute left-2 top-2 z-20 max-w-[calc(100%-1rem)] truncate rounded-full border border-white/25 bg-pitch/75 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-white backdrop-blur sm:left-3 sm:top-3 sm:px-3 sm:text-[10px]">{item.tag}</span> : null}
               </div>

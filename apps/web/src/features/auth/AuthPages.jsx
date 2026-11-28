@@ -7,6 +7,7 @@ import { Button, ErrorNote, Field, PageTitle, inputClass } from "../../component
 import { api, fieldErrors } from "../../lib/api.js";
 import { homeForRole } from "../../lib/access.js";
 import { useQuery } from "@tanstack/react-query";
+import { EMAIL_VERIFICATION_ENQUIRY_MESSAGE } from "../../lib/contactPrefill.js";
 
 function AuthShell({ title, description, children, sideTitle = "Train with purpose.", sideText = "Admissions, squads, attendance and academy communication in one secure place." }) {
   return (
@@ -28,12 +29,69 @@ function AuthShell({ title, description, children, sideTitle = "Train with purpo
   );
 }
 
+function OtpCodeInput({ value, onChange }) {
+  const refs = useRef([]);
+  useEffect(() => {
+    refs.current[0]?.focus();
+  }, []);
+
+  function setDigits(startIndex, rawValue) {
+    const digits = rawValue.replace(/\D/g, "").slice(0, 6);
+    const next = digits.length > 1 ? [] : value.split("").slice(0, 6);
+    if (digits.length > 1) {
+      digits.split("").forEach((digit, offset) => { if (startIndex + offset < 6) next[startIndex + offset] = digit; });
+    } else if (digits) {
+      next[startIndex] = digits;
+    } else {
+      next[startIndex] = "";
+    }
+    const code = Array.from({ length: 6 }, (_, index) => next[index] || "").join("");
+    onChange(code);
+    const nextIndex = digits.length > 1 ? Math.min(startIndex + digits.length, 5) : digits ? Math.min(startIndex + 1, 5) : startIndex;
+    refs.current[nextIndex]?.focus();
+  }
+
+  function handleKeyDown(event, index) {
+    if (event.key === "Backspace" && !value[index] && index > 0) {
+      event.preventDefault();
+      const next = value.split("");
+      next[index - 1] = "";
+      onChange(next.join(""));
+      refs.current[index - 1]?.focus();
+    }
+    if (event.key === "ArrowLeft" && index > 0) refs.current[index - 1]?.focus();
+    if (event.key === "ArrowRight" && index < 5) refs.current[index + 1]?.focus();
+  }
+
+  return (
+    <div role="group" aria-label="6-digit verification code" className="grid w-full max-w-[22rem] grid-cols-6 gap-2 sm:gap-3">
+      {Array.from({ length: 6 }, (_, index) => (
+        <input
+          key={index}
+          ref={(element) => { refs.current[index] = element; }}
+          type="text"
+          inputMode="numeric"
+          autoComplete={index === 0 ? "one-time-code" : "off"}
+          aria-label={`Code digit ${index + 1}`}
+          maxLength={index === 0 ? 6 : 1}
+          value={value[index] || ""}
+          onChange={(event) => setDigits(index, event.target.value)}
+          onKeyDown={(event) => handleKeyDown(event, index)}
+          onPaste={(event) => { event.preventDefault(); setDigits(index, event.clipboardData.getData("text")); }}
+          className={`h-12 min-w-0 w-full rounded-xl border text-center font-mono text-xl font-semibold text-pitch outline-none transition focus:border-fairway focus:ring-2 focus:ring-fairway/20 sm:h-14 sm:text-2xl ${value[index] ? "border-fairway/60 bg-fairway/[0.06]" : "border-line bg-white"}`}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [errors, setErrors] = useState({});
   const [error, setError] = useState(null);
+  const [enquiryEmail, setEnquiryEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const googleError = searchParams.get("google_error");
 
@@ -57,6 +115,7 @@ export function LoginPage() {
     }
     setErrors({});
     setError(null);
+    setEnquiryEmail("");
     setSubmitting(true);
     try {
       const result = await api.post("/auth/login", parsed.data);
@@ -73,6 +132,10 @@ export function LoginPage() {
       queryClient.setQueryData(["me"], session);
       navigate(homeForRole(session.role || result.user.role));
     } catch (err) {
+      if (err?.code === "EMAIL_UNVERIFIED") {
+        document.activeElement?.blur?.();
+        setEnquiryEmail(parsed.data.email);
+      }
       setError(err);
     } finally {
       setSubmitting(false);
@@ -92,13 +155,13 @@ export function LoginPage() {
       <GoogleSignIn />
     </AuthShell>
     {error?.code === "EMAIL_UNVERIFIED" && typeof document !== "undefined" ? createPortal(
-      <div className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex justify-center px-4" role="alert" aria-live="assertive">
-        <div className="pointer-events-auto w-full max-w-xl rounded-2xl border border-amber-200 bg-white/95 p-4 shadow-2xl shadow-pitch/20 backdrop-blur sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
+      <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center px-4 py-6 sm:items-start sm:pt-6" role="alert" aria-live="assertive">
+        <div className="pointer-events-auto max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-amber-200 bg-white/95 p-4 shadow-2xl shadow-pitch/20 backdrop-blur sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
           <div className="min-w-0">
             <p className="font-semibold text-pitch">Confirm your email to continue</p>
             <p className="mt-1 text-sm leading-5 text-ink/70">This account is still waiting for email verification. Enter your code, or contact the academy if you need help.</p>
           </div>
-          <Link className="mt-3 inline-flex shrink-0 items-center justify-center rounded-full bg-pitch px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fairway sm:mt-0" to="/contact">Send an enquiry</Link>
+          <Link className="mt-3 inline-flex shrink-0 items-center justify-center rounded-full bg-pitch px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-fairway sm:mt-0" to="/contact" state={{ enquiryDraft: { email: enquiryEmail, message: EMAIL_VERIFICATION_ENQUIRY_MESSAGE } }}>Send an enquiry</Link>
         </div>
       </div>,
       document.body,
@@ -295,28 +358,76 @@ export function VerifyPage() {
 }
 
 export function ForgotPage() {
-  const [sent, setSent] = useState(false);
+  const [step, setStep] = useState("email");
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
+  const [done, setDone] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  async function onSubmit(event) {
+
+  async function requestCode(event) {
     event.preventDefault();
-    const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
-    const parsed = forgotSchema.safeParse(payload);
-    if (!parsed.success) return setError({ message: "Enter a valid email." });
+    const parsed = forgotSchema.safeParse({ email });
+    if (!parsed.success) return setError({ message: "Enter a valid email address." });
+    setSending(true);
+    setError(null);
     try {
       await api.post("/auth/forgot-password", parsed.data);
-      setSent(true);
+      setEmail(parsed.data.email);
+      setStep("code");
     } catch (err) {
       setError(err);
+    } finally {
+      setSending(false);
     }
   }
+
+  async function updatePassword(event) {
+    event.preventDefault();
+    const parsed = resetSchema.safeParse({ email, otp, password });
+    if (!parsed.success) {
+      const errors = fieldErrors(parsed.error);
+      return setError({ message: errors.otp || errors.password || errors.email || "Enter the 6-digit code and a valid new password." });
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      await api.post("/auth/reset-password", parsed.data);
+      setDone(true);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (done) {
+    return <AuthShell title="Password updated" description="Your new password is ready to use."><div className="rounded-2xl border border-fairway/20 bg-fairway/5 p-5"><p className="text-sm leading-6 text-pitch">Your password has been changed and your previous sessions have been signed out.</p><Link className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-pitch px-5 py-3 text-sm font-semibold text-cream transition hover:bg-fairway sm:w-auto" to="/login">Return to sign in</Link></div></AuthShell>;
+  }
+
   return (
-    <AuthShell title="Reset password" description="If the account can sign in, we email a code.">
-      <form className="space-y-4" onSubmit={onSubmit}>
-        <Field label="Email"><input className={inputClass} name="email" type="email" /></Field>
-        <ErrorNote error={error} />
-        {sent ? <p className="text-sm text-fairway">If that inbox is registered, the code is on its way. <Link to="/reset">Enter it here</Link>.</p> : null}
-        <Button type="submit">Send code</Button>
-      </form>
+    <AuthShell title="Reset password" description={step === "email" ? "We’ll send a secure, one-time code to your email." : "Enter the 6-digit code and choose a new password."}>
+      {step === "email" ? (
+        <form className="space-y-4" onSubmit={requestCode}>
+          <Field label="Email"><input className={inputClass} name="email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></Field>
+          <ErrorNote error={error} />
+          <Button type="submit" disabled={sending}>{sending ? "Sending code…" : "Send reset code"}</Button>
+        </form>
+      ) : (
+        <form className="space-y-5" onSubmit={updatePassword}>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-white px-4 py-3">
+            <div className="min-w-0"><p className="text-xs font-semibold uppercase tracking-wide text-ink/55">Reset code sent to</p><p className="mt-1 break-all text-sm font-medium text-pitch">{email}</p></div>
+            <button type="button" className="text-sm font-semibold text-fairway hover:underline" onClick={() => { setStep("email"); setOtp(""); setPassword(""); setError(null); }}>Change</button>
+          </div>
+          <Field label="6-digit email code"><OtpCodeInput value={otp} onChange={setOtp} /></Field>
+          <Field label="New password"><input className={inputClass} name="password" type="password" autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></Field>
+          <ErrorNote error={error} />
+          <Button type="submit" disabled={saving}>{saving ? "Updating password…" : "Update password"}</Button>
+          <button type="button" disabled={sending} onClick={requestCode} className="block text-sm font-medium text-fairway hover:underline">{sending ? "Sending another code…" : "Send another code"}</button>
+        </form>
+      )}
     </AuthShell>
   );
 }
@@ -324,27 +435,34 @@ export function ForgotPage() {
 export function ResetPage() {
   const [done, setDone] = useState(false);
   const [error, setError] = useState(null);
+  const [otp, setOtp] = useState("");
+  const [saving, setSaving] = useState(false);
   async function onSubmit(event) {
     event.preventDefault();
     const payload = Object.fromEntries(new FormData(event.currentTarget).entries());
+    payload.otp = otp;
     const parsed = resetSchema.safeParse(payload);
     if (!parsed.success) return setError({ message: fieldErrors(parsed.error).password || "Check the email, code and new password." });
+    setSaving(true);
+    setError(null);
     try {
       await api.post("/auth/reset-password", parsed.data);
       setDone(true);
     } catch (err) {
       setError(err);
+    } finally {
+      setSaving(false);
     }
   }
   return (
     <AuthShell title="Choose a new password" description="Use the code from the reset email.">
       <form className="space-y-4" onSubmit={onSubmit}>
         <Field label="Email"><input className={inputClass} name="email" type="email" /></Field>
-        <Field label="Code"><input className={inputClass} name="otp" /></Field>
+        <Field label="6-digit email code"><OtpCodeInput value={otp} onChange={setOtp} /></Field>
         <Field label="New password"><input className={inputClass} name="password" type="password" /></Field>
         <ErrorNote error={error} />
         {done ? <p className="text-sm text-fairway"><Link to="/login">Password updated. Sign in.</Link></p> : null}
-        <Button type="submit">Update password</Button>
+        <Button type="submit" disabled={saving}>{saving ? "Updating password…" : "Update password"}</Button>
       </form>
     </AuthShell>
   );

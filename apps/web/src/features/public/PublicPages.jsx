@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { enquirySchema } from "@neerapace/shared";
 import { Badge, Empty, ErrorNote, PageTitle, RichText, Spinner, inputClass } from "../../components/ui.jsx";
 import { api, fieldErrors, imageUrl } from "../../lib/api.js";
@@ -435,6 +435,8 @@ export function GalleryPage() {
 }
 
 export function ContactPage() {
+  const location = useLocation();
+  const enquiryDraft = location.state?.enquiryDraft;
   const page = usePage("contact");
   const [errors, setErrors] = useState({});
   const [done, setDone] = useState(false);
@@ -663,6 +665,7 @@ export function ContactPage() {
                   className={inputClass}
                   name="email"
                   type="email"
+                  defaultValue={enquiryDraft?.email || ""}
                   placeholder="you@example.com"
                 />
               </Field>
@@ -682,6 +685,7 @@ export function ContactPage() {
                 className={inputClass}
                 name="message"
                 rows={5}
+                defaultValue={enquiryDraft?.message || ""}
                 placeholder="Tell us about your cricket background, batch preference, or question..."
               />
             </Field>
